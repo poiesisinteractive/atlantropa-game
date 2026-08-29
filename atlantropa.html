@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATLANTROPA — Le Grand Œuvre</title>
+<style>
+  :root{
+    --bg:#0e1114; --panel:#171b20; --panel2:#1f242b; --line:#2c333c;
+    --ink:#e8e3d6; --dim:#9aa3ad; --gold:#c9a227; --gold2:#e6c65a;
+    --red:#c0392b; --green:#5a9e5e; --blue:#4a8fb8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100vh}
+
+  #top{display:flex;align-items:center;gap:18px;padding:8px 14px;background:linear-gradient(180deg,#1d2229,#13171c);border-bottom:1px solid var(--line);flex:0 0 auto}
+  #brand{font-family:Georgia,serif;font-size:19px;letter-spacing:.18em;color:var(--gold2)}
+  #brand small{display:block;font-size:9px;letter-spacing:.28em;color:var(--dim)}
+  .stat{display:flex;flex-direction:column;line-height:1.2;min-width:74px}
+  .stat b{font-size:15px;font-variant-numeric:tabular-nums}
+  .stat span{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  #speed{margin-left:auto;display:flex;gap:4px;align-items:center}
+  #speed .rate{font-size:9.5px;color:var(--dim);letter-spacing:.08em;margin-right:4px}
+  button{font-family:inherit;font-size:12px;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:5px 10px;cursor:pointer}
+  button:hover:not(:disabled){background:#2b323b;border-color:#454e59}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button.on{background:var(--gold);border-color:var(--gold2);color:#1a1508;font-weight:600}
+
+  #main{display:flex;flex:1 1 auto;min-height:0}
+  #mapwrap{flex:1 1 auto;position:relative;min-width:0;background:#05080b;overflow:hidden}
+  canvas{display:block;width:100%;height:100%}
+  #side{flex:0 0 340px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  #tabs{display:flex;border-bottom:1px solid var(--line)}
+  #tabs button{flex:1;border:0;border-radius:0;background:transparent;padding:9px 4px;font-size:11px;letter-spacing:.05em;color:var(--dim)}
+  #tabs button.on{background:var(--panel2);color:var(--gold2);box-shadow:inset 0 -2px 0 var(--gold)}
+  .pane{display:none;padding:12px;overflow-y:auto;flex:1 1 auto}
+  .pane.on{display:block}
+
+  .sec{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:14px 0 7px;border-bottom:1px solid var(--line);padding-bottom:4px}
+  .sec:first-child{margin-top:0}
+  .bar{margin:7px 0}
+  .bar .lab{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+  .bar .lab span:last-child{font-variant-numeric:tabular-nums;color:var(--dim)}
+  .track{height:6px;background:#0c0f12;border-radius:3px;overflow:hidden}
+  .fill{height:100%;transition:width .3s}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:9px;margin-bottom:8px}
+  .card h4{margin:0 0 3px;font-size:12.5px;font-family:Georgia,serif}
+  .card p{margin:0 0 6px;font-size:11px;color:var(--dim);line-height:1.45}
+  .card .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .cost{font-size:11px;color:var(--gold2);font-variant-numeric:tabular-nums}
+  .prog{height:4px;background:#0c0f12;border-radius:2px;margin-top:7px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--gold)}
+  .tag{font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border-radius:2px;background:#2a3039;color:var(--dim)}
+  .tag.ok{background:#1e3a22;color:#8fd096} .tag.no{background:#3a1e1e;color:#e08b82}
+  input[type=range]{width:100%;accent-color:var(--gold)}
+
+  #log{flex:0 0 172px;background:#101418;border-top:1px solid var(--line);overflow-y:auto;padding:8px 12px;font-size:11.5px;line-height:1.5}
+  #log div{margin-bottom:5px;padding-left:60px;position:relative;color:#c3cbd4}
+  #log b{position:absolute;left:0;color:var(--gold);font-variant-numeric:tabular-nums;font-weight:600}
+  #log div.bad{color:#e8a49b} #log div.good{color:#9ed3a3} #log div.big{color:var(--gold2);font-family:Georgia,serif;font-size:12.5px}
+
+  .overlay{position:absolute;inset:0;background:rgba(6,9,12,.93);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px}
+  .modal{max-width:660px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:5px;padding:26px 30px;max-height:88vh;overflow-y:auto}
+  .modal h2{margin:0 0 4px;font-size:22px;color:var(--gold2)}
+  .modal .kicker{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+  .modal p{line-height:1.62;color:#cfd6dd;font-size:13.5px}
+  .modal .choices{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+  table.verdict{width:100%;border-collapse:collapse;margin:14px 0;font-size:12px}
+  table.verdict td,table.verdict th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+  table.verdict th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  table.verdict td:nth-child(2){color:var(--dim)} table.verdict td:nth-child(3){color:var(--gold2);font-variant-numeric:tabular-nums}
+
+  /* --- contrôles carte --- */
+  #layers{position:absolute;left:10px;top:10px;display:flex;gap:4px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:4px}
+  #layers button{padding:4px 9px;font-size:11px}
+  #mapopt{position:absolute;left:10px;top:48px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:6px 9px;font-size:11px;color:var(--dim);display:flex;gap:12px}
+  #mapopt label{display:flex;align-items:center;gap:5px;cursor:pointer}
+  #legend{position:absolute;left:10px;bottom:10px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:8px 11px;font-size:10.5px;color:var(--dim);pointer-events:none;line-height:1.65;max-width:230px}
+  #legend i{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+  #seaBadge{position:absolute;right:12px;top:12px;background:rgba(14,17,20,.9);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:4px;padding:8px 13px;text-align:right}
+  #seaBadge b{font-size:27px;font-family:Georgia,serif;font-variant-numeric:tabular-nums;display:block;line-height:1}
+  #seaBadge span{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  #zoomhint{position:absolute;right:12px;bottom:10px;font-size:10px;color:#5f6871;pointer-events:none}
+  #boot{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;background:#05080b;color:var(--dim);font-family:Georgia,serif;letter-spacing:.2em;z-index:60;font-size:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div id="brand">ATLANTROPA<small>INSTITUT DU GRAND ŒUVRE · MUNICH</small></div>
+    <div class="stat"><b id="sYear">1930</b><span>Année</span></div>
+    <div class="stat"><b id="sMoney">—</b><span>Trésor (Md)</span></div>
+    <div class="stat"><b id="sPower">0</b><span>Énergie (GW)</span></div>
+    <div class="stat"><b id="sLand">0</b><span>Terres (km²)</span></div>
+    <div class="stat"><b id="sSal">38,0</b><span>Salinité (g/L)</span></div>
+    <div class="stat"><b id="sRef">0</b><span>Déplacés (M)</span></div>
+    <div id="speed">
+      <span class="rate" id="rate">en pause</span>
+      <button data-sp="0" class="on" title="Pause">❚❚</button>
+      <button data-sp="1" title="Lent">▶</button>
+      <button data-sp="2" title="Normal">▶▶</button>
+      <button data-sp="3" title="Rapide">▶▶▶</button>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="mapwrap">
+      <canvas id="cv"></canvas>
+      <div id="layers">
+        <button data-l="terrain" class="on">Relief</button>
+        <button data-l="geo">Géologie</button>
+        <button data-l="eco">Économie</button>
+        <button data-l="sel">Sel</button>
+      </div>
+      <div id="mapopt">
+        <label><input type="checkbox" id="optBorders" checked> Frontières (1930)</label>
+        <label><input type="checkbox" id="optLabels" checked> Toponymes</label>
+      </div>
+      <div id="seaBadge"><b id="sLevel">0 m</b><span>Niveau de la Méditerranée</span></div>
+      <div id="legend"></div>
+      <div id="zoomhint">molette : zoom · glisser : déplacer</div>
+      <div id="boot"><div>CALCUL DU RELIEF ET DE LA BATHYMÉTRIE</div><div style="letter-spacing:.05em;font-family:Inter,sans-serif" id="bootmsg">…</div></div>
+    </div>
+
+    <div id="side">
+      <div id="tabs">
+        <button data-tab="ops" class="on">Chantiers</button>
+        <button data-tab="env">Milieu</button>
+        <button data-tab="geo">Nations</button>
+        <button data-tab="doc">Dossier</button>
+      </div>
+      <div class="pane on" id="pane-ops"></div>
+      <div class="pane" id="pane-env"></div>
+      <div class="pane" id="pane-geo"></div>
+      <div class="pane" id="pane-doc"></div>
+    </div>
+  </div>
+
+  <div id="log"></div>
+</div>
+
+<div class="overlay" id="ov" style="display:none"><div class="modal" id="ovm"></div></div>
+
+<script>
+/* =====================================================================
+   ATLANTROPA — simulation de gestion
+   Modèle simplifié mais calibré : déficit évaporatoire net ≈ 0,95 m/an,
+   P = ρgQHη, bilan de sel à masse constante, bathymétrie schématique
+   avec ombrage du relief.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------- GÉO */
+const LON0=-10, LON1=40, LAT0=29, LAT1=47;
+const PXDEG=26;
+const LATSCALE=1/Math.cos(38*Math.PI/180);
+const MW = Math.round((LON1-LON0)*PXDEG);            // 1300
+const MH = Math.round((LAT1-LAT0)*PXDEG*LATSCALE);   // ≈594
+const CELL = 1;
+const GW_ = MW, GH_ = MH;
+const KM_LON = 111.32*Math.cos(38*Math.PI/180);
+const CELLKM = (CELL/PXDEG)*KM_LON;                  // ≈3,37 km
+const CELL_AREA = CELLKM*CELLKM*1e6;                 // m²
+const N=GW_*GH_;
+
+const lon2x = l => (l-LON0)*PXDEG;
+const lat2y = l => (LAT1-l)*PXDEG*LATSCALE;
+const gx2lon = g => LON0 + (g+0.5)/PXDEG;
+const gy2lat = g => LAT1 - (g+0.5)/(PXDEG*LATSCALE);
+
+/* --- Contours (schématiques, lissés par Chaikin au chargement) --- */
+const MED_=[[-5.60,36.02],[-5.20,36.42],[-4.42,36.71],[-3.60,36.72],[-2.90,36.75],[-2.15,36.83],[-1.80,37.23],[-0.95,37.58],[-0.65,38.15],[-0.50,38.42],[0.20,38.75],[0.00,39.20],[-0.32,39.42],[-0.20,39.95],[0.20,40.20],[0.95,40.72],[1.30,41.10],[2.20,41.42],[3.20,41.90],[3.32,42.32],[3.05,42.55],[3.60,43.35],[4.15,43.55],[4.85,43.35],[5.35,43.32],[6.15,43.10],[6.90,43.42],[7.25,43.72],[7.90,43.90],[8.50,44.42],[9.20,44.30],[9.85,44.05],[10.30,43.65],[10.30,42.95],[11.00,42.40],[11.80,42.10],[12.28,41.72],[13.10,41.25],[13.60,41.22],[14.05,40.83],[14.35,40.78],[14.90,40.65],[15.30,40.03],[16.00,39.35],[16.60,38.80],[16.10,38.55],[15.65,38.10],[16.00,37.95],[16.60,38.60],[17.15,39.05],[17.20,39.85],[16.85,40.42],[17.30,40.52],[17.95,40.30],[18.42,39.80],[18.50,40.15],[17.95,40.68],[17.30,40.97],[16.85,41.13],[16.20,41.90],[15.90,41.92],[15.35,41.90],[14.75,42.15],[14.20,42.40],[13.75,43.10],[13.55,43.62],[13.15,44.00],[12.45,44.42],[12.25,44.95],[12.30,45.42],[13.10,45.60],[13.65,45.75],[13.75,45.55],[14.55,45.30],[14.90,44.85],[15.30,44.30],[15.95,43.75],[16.45,43.42],[17.30,42.92],[18.10,42.60],[18.55,42.42],[19.10,42.10],[19.35,41.75],[19.45,41.35],[19.40,40.85],[19.30,40.45],[19.90,39.95],[20.20,39.60],[20.60,39.45],[20.85,38.95],[21.15,38.35],[21.60,38.30],[22.20,38.35],[22.90,38.30],[23.10,37.95],[22.85,37.95],[22.50,37.85],[22.20,37.60],[21.60,37.65],[21.55,37.20],[21.70,36.80],[22.15,36.80],[22.35,36.42],[22.60,36.80],[23.05,36.55],[23.20,36.40],[23.15,37.00],[23.05,37.45],[23.60,37.90],[23.90,38.10],[24.05,38.40],[23.75,38.55],[23.30,38.85],[22.95,39.10],[22.85,39.45],[22.65,39.85],[22.55,40.25],[22.85,40.60],[23.35,40.42],[23.70,40.30],[24.00,40.60],[24.40,40.92],[25.30,40.90],[25.90,40.95],[26.15,40.60],[26.20,40.42],[26.55,40.20],[26.70,39.95],[26.20,39.60],[26.50,39.35],[27.00,38.95],[26.70,38.65],[27.20,38.42],[26.90,38.20],[27.30,37.95],[27.20,37.60],[27.55,37.25],[27.35,36.95],[28.10,36.75],[28.80,36.65],[29.20,36.25],[29.90,36.15],[30.55,36.30],[30.75,36.85],[31.40,36.80],[32.10,36.30],[33.00,36.15],[33.75,36.20],[34.60,36.75],[35.10,36.60],[35.55,36.60],[36.10,36.02],[35.95,35.90],[35.90,35.55],[35.65,34.95],[35.50,34.55],[35.45,33.90],[35.20,33.35],[34.95,32.85],[34.85,32.35],[34.65,31.80],[34.30,31.40],[33.70,31.15],[32.90,31.10],[32.30,31.20],[31.60,31.45],[31.00,31.55],[30.35,31.45],[29.90,31.20],[29.20,31.05],[28.50,31.00],[27.85,31.20],[27.30,31.40],[26.50,31.55],[25.80,31.60],[25.15,31.60],[24.60,31.90],[24.00,32.10],[23.40,32.30],[22.80,32.70],[22.15,32.90],[21.60,32.90],[20.90,32.65],[20.20,32.30],[19.80,31.60],[19.30,30.95],[18.60,30.50],[17.90,30.35],[17.20,30.75],[16.20,31.10],[15.20,31.35],[14.20,32.35],[13.20,32.90],[12.60,32.85],[11.90,33.10],[11.30,33.25],[11.10,33.60],[10.20,33.70],[10.05,34.15],[10.60,34.55],[10.85,34.70],[11.05,35.20],[10.80,35.65],[10.50,35.80],[10.60,36.15],[10.85,36.45],[11.05,36.85],[10.55,36.85],[10.30,37.05],[9.85,37.30],[9.30,37.20],[8.60,37.15],[7.80,36.90],[7.10,37.00],[6.60,37.10],[5.90,36.90],[5.10,36.75],[4.30,36.90],[3.10,36.80],[2.20,36.60],[1.30,36.50],[0.15,36.00],[-0.60,35.80],[-1.20,35.75],[-1.80,35.60],[-2.30,35.35],[-2.95,35.35],[-3.60,35.25],[-4.30,35.20],[-5.00,35.55],[-5.35,35.85]];
+const ATL_=[[-10.0,29.0],[-10.0,39.2],[-9.5,38.7],[-8.85,38.40],[-8.80,37.05],[-7.40,37.18],[-6.40,36.80],[-6.05,36.55],[-5.60,36.02],[-5.35,35.85],[-5.80,35.75],[-6.30,35.45],[-6.90,34.95],[-7.60,34.20],[-8.50,33.30],[-9.30,32.50],[-9.80,31.40],[-10.0,30.5]];
+const MARM_=[[26.10,40.35],[26.30,40.12],[26.75,40.32],[27.50,40.55],[28.50,40.40],[29.30,40.50],[29.95,40.75],[29.20,41.08],[29.02,41.24],[28.20,41.05],[27.20,40.98],[26.55,40.72]];
+const BLACK_=[[28.95,41.05],[30.20,41.15],[31.40,41.10],[32.30,41.75],[33.40,42.02],[34.90,42.05],[36.20,41.30],[37.80,41.05],[39.40,41.10],[40.00,41.20],[40.00,46.60],[38.20,46.60],[37.00,46.90],[36.60,45.35],[35.00,45.30],[33.60,45.95],[33.20,46.10],[31.50,46.60],[30.50,46.55],[29.70,45.30],[28.70,44.60],[28.60,43.40],[27.90,42.70],[27.50,41.90],[28.10,41.55]];
+const ISL_=[
+ [[12.43,37.80],[13.35,38.18],[14.30,38.02],[15.10,38.28],[15.62,38.22],[15.30,37.42],[15.10,36.95],[14.50,36.70],[13.70,37.10],[12.65,37.58]],
+ [[8.20,41.12],[9.20,41.25],[9.62,41.10],[9.75,40.50],[9.55,39.55],[9.60,39.15],[9.05,39.05],[8.42,38.90],[8.38,39.60],[8.50,40.30],[8.20,40.80]],
+ [[8.60,42.72],[9.35,42.98],[9.55,42.60],[9.42,41.72],[9.20,41.38],[8.75,41.55],[8.55,42.20]],
+ [[23.52,35.30],[24.20,35.60],[25.20,35.42],[26.30,35.35],[26.20,35.02],[25.10,34.95],[24.10,35.00]],
+ [[32.30,35.05],[33.20,35.35],[34.05,35.60],[34.60,35.68],[33.90,34.95],[33.00,34.62],[32.35,34.72]],
+ [[2.35,39.55],[3.15,39.92],[3.45,39.75],[3.20,39.30],[2.60,39.35]],
+ [[1.20,39.10],[1.62,39.08],[1.60,38.65],[1.20,38.80]],
+ [[22.95,38.65],[23.60,38.55],[24.25,38.30],[23.80,38.10],[23.30,38.35]],
+ [[27.75,36.45],[28.28,36.42],[28.25,35.95],[27.80,36.10]],
+ [[25.90,39.25],[26.62,39.35],[26.60,39.05],[26.00,39.02]],
+ [[14.18,35.98],[14.58,35.96],[14.56,35.78],[14.18,35.82]]
+];
+
+/* --- Frontières politiques vers 1930 (tracés simplifiés) --- */
+const BORDERS=[
+ [[-8.20,42.10],[-7.00,41.95],[-6.20,41.60],[-6.85,41.00],[-7.00,40.20],[-7.55,39.65],[-7.00,39.10],[-7.30,38.45],[-7.45,37.55],[-7.42,37.20]],
+ [[-1.78,43.35],[-0.75,42.95],[0.65,42.70],[1.45,42.50],[2.55,42.35],[3.20,42.43]],
+ [[7.55,43.78],[6.85,44.35],[6.95,45.05],[7.05,45.45],[6.80,45.78],[7.05,45.92]],
+ [[7.05,45.92],[6.80,46.30],[6.10,46.20],[5.95,46.55],[6.45,46.95],[7.00,47.00]],
+ [[7.05,45.92],[8.15,46.15],[8.80,46.10],[9.30,46.50],[10.15,46.62],[10.45,46.85]],
+ [[9.55,47.00],[9.65,46.90],[10.45,46.85]],
+ [[10.45,46.85],[11.50,47.00],[12.20,46.90],[13.70,46.55],[14.55,46.45],[14.90,46.20],[15.35,45.50],[14.55,45.30]],
+ [[16.10,47.00],[16.45,46.85],[16.30,46.40],[17.60,46.10],[18.90,45.90],[19.60,46.18],[20.30,46.15],[21.50,46.15]],
+ [[21.50,46.15],[22.20,44.60],[22.60,44.55],[22.40,44.00],[22.60,43.20],[22.35,42.30],[22.55,41.75],[22.90,41.34]],
+ [[22.60,44.55],[24.20,43.75],[26.00,43.75],[27.20,44.10],[28.60,43.75]],
+ [[19.30,42.55],[19.65,42.60],[20.05,42.55],[20.55,42.10],[20.50,41.55],[20.75,40.90],[21.05,40.65],[20.60,40.10],[20.05,39.85],[19.95,39.65]],
+ [[20.60,40.10],[21.10,40.65],[22.20,41.15],[22.90,41.34],[24.50,41.58],[26.10,41.35]],
+ [[26.10,41.35],[27.00,42.00],[27.85,42.00],[28.00,41.98]],
+ [[26.10,41.35],[26.35,40.95],[26.30,40.72],[26.10,40.60]],
+ [[36.10,36.02],[36.65,36.80],[37.50,36.65],[38.60,36.70],[40.00,37.10]],
+ [[35.98,34.63],[36.30,34.60],[36.60,34.20],[36.35,33.85],[35.65,33.25],[35.55,33.27]],
+ [[35.10,33.09],[35.30,33.10],[35.55,33.27]],
+ [[35.55,33.27],[35.60,32.70],[35.55,32.40],[35.55,31.75],[35.45,31.50],[35.20,30.95]],
+ [[34.25,31.22],[34.55,31.10],[34.90,29.50],[34.90,29.00]],
+ [[25.00,31.62],[25.00,29.00]],
+ [[11.55,33.18],[10.45,32.50],[10.25,31.70],[9.85,30.90],[9.52,30.23],[9.50,29.00]],
+ [[8.60,37.15],[8.25,36.55],[8.35,35.40],[8.25,34.70],[7.75,34.20],[7.50,33.90],[8.15,33.10],[9.05,32.10],[9.52,30.23]],
+ [[-2.20,35.10],[-1.75,34.75],[-1.55,33.70],[-1.30,32.70],[-1.00,32.10],[-1.20,31.30],[-2.90,30.50],[-3.65,29.60],[-4.80,29.00]]
+];
+const COUNTRIES=[
+ [-3.9,40.2,"ESPAGNE"],[-8.2,39.8,"PORTUGAL"],[2.4,45.6,"FRANCE"],[12.2,43.3,"ITALIE"],
+ [8.2,46.6,"SUISSE"],[13.6,46.9,"AUTRICHE"],[17.6,46.6,"HONGRIE"],[19.6,44.3,"YOUGOSLAVIE"],
+ [20.2,41.0,"ALBANIE"],[22.0,39.6,"GRÈCE"],[25.0,42.5,"BULGARIE"],[25.5,45.6,"ROUMANIE"],
+ [32.5,38.8,"TURQUIE"],[38.4,35.2,"SYRIE"],[35.9,34.2,"LIBAN"],[35.0,31.6,"PALESTINE"],
+ [37.4,31.4,"TRANSJORDANIE"],[29.6,29.6,"ÉGYPTE"],[17.5,30.0,"LIBYE"],[9.4,34.6,"TUNISIE"],
+ [2.5,33.4,"ALGÉRIE"],[-6.2,32.2,"MAROC"]
+];
+
+/* --- Bassins (lon, lat, σlon, σlat, profondeur m) --- */
+const BASINS=[
+ [5.0,39.0,7.0,3.0,2500],[26.0,34.5,9.0,3.2,2700],
+ [-3.5,36.0,1.8,0.9,1300],
+ [4.5,39.5,4.5,2.2,2800],[1.0,39.5,2.0,1.5,2300],
+ [7.0,38.5,2.5,1.5,2700],[8.3,43.2,1.2,0.8,2500],
+ [12.4,39.8,1.8,1.5,3500],
+ [18.5,36.0,3.5,2.0,4100],
+ [13.2,44.8,1.3,1.1,45],[14.8,43.2,1.2,0.9,250],[18.0,42.0,1.0,0.8,1200],
+ [25.5,36.0,2.0,1.2,1500],[24.5,39.5,1.8,1.0,900],
+ [28.0,40.7,1.0,0.35,1100],
+ [30.5,33.8,4.5,1.8,3000],
+ [18.5,31.8,2.5,1.0,500],
+ [34.0,43.3,5.0,2.0,2100],
+ [-8.0,35.0,4.0,4.0,3500]
+];
+const SHOALS=[
+ [11.0,34.2,2.0,1.3,45],[13.0,44.9,1.7,1.2,40],[4.0,42.9,1.7,0.8,130],
+ [25.3,40.3,1.6,0.9,110],[11.8,37.0,1.7,1.0,330],[-5.5,35.9,0.7,0.5,290],
+ [10.4,42.9,0.9,0.7,300],[30.5,32.0,3.2,0.9,110],[3.0,37.3,1.5,0.6,600],
+ [15.7,38.15,0.35,0.3,120]
+];
+/* --- Reliefs terrestres (lon, lat, σlon, σlat, altitude m) --- */
+const RANGES=[
+ [0.5,42.7,2.2,0.35,2600],[-3.3,37.1,0.9,0.30,2900],[-2.5,40.5,1.9,1.0,1500],
+ [-5.0,43.0,2.6,0.40,1700],[-4.2,40.6,1.6,0.35,2000],
+ [9.5,46.2,3.6,0.75,3100],[3.0,45.2,1.5,0.8,1400],[6.4,44.3,1.2,0.7,2200],
+ [11.0,44.2,1.0,0.5,1500],[13.2,42.5,0.9,0.7,2000],[15.4,40.8,0.8,0.5,1500],[16.3,39.4,0.7,0.6,1500],
+ [14.9,37.75,0.32,0.26,3300],[13.8,37.9,0.8,0.30,1400],
+ [9.10,42.2,0.35,0.5,2300],[9.20,40.0,0.5,0.8,1200],
+ [17.5,43.6,1.9,1.4,1700],[19.9,41.6,0.7,1.0,2000],[21.3,39.6,0.8,1.2,2100],
+ [24.0,42.6,2.6,0.6,1700],[24.6,41.6,1.5,0.45,1900],[21.9,37.6,0.9,0.7,1600],
+ [24.5,35.25,0.95,0.14,1900],
+ [30.5,37.2,2.2,0.6,2600],[34.5,37.6,2.0,0.7,3000],[33.0,39.2,4.5,1.4,1300],
+ [37.5,40.4,3.2,0.6,2600],[40.0,38.5,2.0,1.2,2200],
+ [35.9,33.9,0.35,0.75,2500],[35.4,31.9,0.5,1.1,1000],
+ [33.0,34.9,0.6,0.20,1900],
+ [-5.5,32.0,2.6,1.2,3200],[-1.0,34.5,3.0,0.8,1700],[2.5,35.9,3.0,0.7,1700],[7.0,35.9,1.6,0.6,1500],
+ [24.5,46.2,2.6,1.2,1900],[27.5,45.3,1.6,0.7,1400],
+ [23.5,29.5,4.0,1.5,600],[15.0,29.6,4.0,1.5,700]
+];
+
+/* --- Villes --- */
+const CITIES=[
+ {n:"Venise",lo:12.34,la:45.44,w:3,nat:"IT"},{n:"Trieste",lo:13.77,la:45.65,w:2,nat:"IT"},
+ {n:"Gênes",lo:8.93,la:44.41,w:3,nat:"IT"},{n:"Marseille",lo:5.37,la:43.30,w:3,nat:"FR"},
+ {n:"Barcelone",lo:2.17,la:41.39,w:3,nat:"ES"},{n:"Valence",lo:-0.38,la:39.47,w:2,nat:"ES"},
+ {n:"Naples",lo:14.27,la:40.85,w:3,nat:"IT"},{n:"Palerme",lo:13.36,la:38.12,w:2,nat:"IT"},
+ {n:"Le Pirée",lo:23.62,la:37.94,w:3,nat:"GR"},{n:"Thessalonique",lo:22.94,la:40.64,w:2,nat:"GR"},
+ {n:"Izmir",lo:27.14,la:38.42,w:2,nat:"TR"},{n:"Istanbul",lo:28.98,la:41.01,w:3,nat:"TR"},
+ {n:"Beyrouth",lo:35.50,la:33.89,w:2,nat:"LV"},{n:"Alexandrie",lo:29.92,la:31.20,w:3,nat:"EG"},
+ {n:"Tripoli",lo:13.19,la:32.89,w:2,nat:"LY"},{n:"Tunis",lo:10.30,la:36.85,w:2,nat:"TN"},
+ {n:"Alger",lo:3.06,la:36.75,w:3,nat:"DZ"},{n:"Split",lo:16.44,la:43.51,w:2,nat:"YU"}
+];
+
+/* --- Annotations de carte --- */
+const GEO_NOTES=[
+ [4.5,39.6,"Bassin algéro-provençal","−2 800 m"],
+ [12.4,39.9,"Mer Tyrrhénienne","−3 500 m"],
+ [18.6,35.9,"Plaine abyssale ionienne","−4 100 m · fosse Calypso"],
+ [30.8,33.7,"Bassin levantin","−3 000 m"],
+ [25.4,36.0,"Mer Égée","−1 500 m"],
+ [13.2,44.9,"Adriatique nord","−40 m seulement"],
+ [11.0,34.2,"Golfe de Gabès","−45 m"],
+ [-5.5,35.95,"Seuil de Gibraltar","−290 m"],
+ [11.9,37.0,"Seuil siculo-tunisien","−330 m"],
+ [34.2,43.3,"Mer Noire","−2 100 m"]
+];
+const VOLCANOES=[[14.99,37.75,"Etna"],[14.43,40.82,"Vésuve"],[15.21,38.79,"Stromboli"],[14.96,38.40,"Vulcano"],[25.40,36.40,"Santorin"],[27.17,36.58,"Nisyros"],[14.14,40.83,"Champs Phlégréens"]];
+const FAULTS=[
+ {n:"Faille nord-anatolienne",p:[[30.0,40.72],[31.5,40.78],[33.0,40.86],[35.0,40.72],[37.0,40.30],[39.0,39.90],[40.0,39.70]]},
+ {n:"Arc hellénique — subduction",p:[[21.0,35.6],[22.5,34.9],[24.5,34.6],[26.5,34.7],[28.2,35.3],[29.4,36.0]]},
+ {n:"Arc calabrais",p:[[15.2,36.3],[16.4,36.8],[17.2,37.6],[17.4,38.5]]}
+];
+const EVAPORITES=[[6.0,39.2,"Évaporites messiniennes"],[19.0,35.6,"1 à 3 km de sel sous les fonds"],[29.5,33.5,"Évaporites messiniennes"]];
+const RESOURCES=[
+ [8.78,34.42,"Phosphates","Gafsa"],[8.13,35.94,"Fer","Ouenza"],[31.80,41.45,"Charbon","Zonguldak"],
+ [3.30,32.90,"Gaz","Hassi R'Mel"],[19.50,29.60,"Pétrole","Syrte (1959)"],[10.10,44.08,"Marbre","Carrare"],
+ [30.90,30.60,"Coton","Delta du Nil"],[-0.40,39.40,"Agrumes","Huerta de Valence"]
+];
+const SEAROUTE=[[-5.6,35.95],[-2.0,36.4],[0.5,37.0],[4.0,37.6],[8.0,37.6],[11.4,37.3],[14.0,35.8],[17.5,34.6],[22.0,34.2],[26.0,33.6],[30.0,32.2],[32.3,31.3]];
+
+/* --- Nations --- */
+const NATIONS=[
+ {id:"ES",n:"Espagne",att:45,mem:false,ct:0.8},{id:"MA",n:"Maroc",att:30,mem:false,ct:0.3},
+ {id:"UK",n:"Royaume-Uni",att:25,mem:false,ct:1.4},{id:"FR",n:"France",att:50,mem:false,ct:1.6},
+ {id:"IT",n:"Italie",att:60,mem:false,ct:1.2},{id:"GR",n:"Grèce",att:40,mem:false,ct:0.4},
+ {id:"TR",n:"Turquie",att:35,mem:false,ct:0.5},{id:"EG",n:"Égypte",att:30,mem:false,ct:0.5},
+ {id:"LY",n:"Libye",att:35,mem:false,ct:0.2},{id:"TN",n:"Tunisie",att:38,mem:false,ct:0.2},
+ {id:"DZ",n:"Algérie",att:42,mem:false,ct:0.3},{id:"YU",n:"Yougoslavie",att:35,mem:false,ct:0.3},
+ {id:"LV",n:"Levant",att:30,mem:false,ct:0.2},{id:"CG",n:"Congo",att:20,mem:false,ct:0.6}
+];
+
+/* --- Projets --- */
+const PROJECTS=[
+ {id:"gib",n:"Barrage de Gibraltar",cost:64,yrs:12,req:["ES","MA","UK"],
+  d:"35 km de digue, 200 000 ouvriers, une tour de 400 m dessinée par Peter Behrens. Ferme la Méditerranée et arme les turbines."},
+ {id:"dard",n:"Barrage des Dardanelles",cost:20,yrs:7,req:["TR"],
+  d:"Retient la mer Noire. Sans lui, elle se déverse dans l'Égée et ralentit l'abaissement d'un tiers."},
+ {id:"suez",n:"Écluses de Suez",cost:14,yrs:5,req:["EG","UK"],
+  d:"Le canal est au niveau de la mer : sans écluses, la mer Rouge s'y engouffre en cataracte."},
+ {id:"sic",n:"Digue Sicile–Tunisie",cost:46,yrs:11,req:["IT","TN"],
+  d:"Route Europe–Afrique. Isole le bassin oriental et permet de l'abaisser bien plus bas que l'occidental."},
+ {id:"ven",n:"Digue de Venise",cost:7,yrs:3,req:["IT"],
+  d:"Enferme la lagune dans un lac. Venise est sauvée — à 400 km du rivage le plus proche."},
+ {id:"cgo",n:"Barrage du Congo — mer tchadienne",cost:58,yrs:20,req:["CG","FR"],
+  d:"Deux mers intérieures africaines pour irriguer le Sahara. Nécessite le déplacement d'environ 12 millions d'habitants."},
+ {id:"prt",n:"Ports en cascade",cost:26,yrs:9,req:[],
+  d:"Descendre les ports le long des nouvelles pentes par écluses successives. Réduit de moitié la ruine des villes échouées."},
+ {id:"agr",n:"Bonification des fonds",cost:22,yrs:8,req:[],
+  d:"Labourer, drainer, dessaler les fonds émergés. Sörgel y voit le grenier de l'Eurafrique."},
+ {id:"cit",n:"Villes nouvelles",cost:30,yrs:12,req:[],
+  d:"Bâtir sur les terres gagnées. Emplois, prestige, recettes foncières."},
+ {id:"grd",n:"Réseau atlantropéen",cost:24,yrs:8,req:["FR","IT"],
+  d:"Lignes à très haute tension de Hambourg à Léopoldville. Valorise chaque gigawatt."}
+];
+const DAMS={
+ gib:[[[-5.72,36.14],[-5.48,35.90]]],
+ sic:[[[11.05,36.82],[12.55,37.76]],[[15.18,38.36],[15.78,38.02]]],
+ dard:[[[25.98,40.52],[26.58,39.96]]],
+ ven:[[[12.20,45.20],[12.70,45.62]]]
+};
+
+/* ------------------------------------------------------------- OUTILS */
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const fmt=(v,d=0)=>(isFinite(v)?v:0).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+function chaikin(poly,iter){
+  let p=poly;
+  for(let k=0;k<iter;k++){
+    const q=[];
+    for(let i=0;i<p.length;i++){
+      const a=p[i], b=p[(i+1)%p.length];
+      q.push([a[0]*0.75+b[0]*0.25, a[1]*0.75+b[1]*0.25]);
+      q.push([a[0]*0.25+b[0]*0.75, a[1]*0.25+b[1]*0.75]);
+    }
+    p=q;
+  }
+  return p;
+}
+const MED=chaikin(MED_,2), ATL=chaikin(ATL_,1), MARM=chaikin(MARM_,2), BLACK=chaikin(BLACK_,2);
+const ISLANDS=ISL_.map(p=>chaikin(p,2));
+
+/* Le bassin oriental est séparé de l'occidental par la ligne Cap Bon –
+   Trapani puis le détroit de Messine. */
+function isEast(lo,la){
+  if(la>41.6) return lo>12.20;
+  if(la>38.6) return lo>16.00;
+  if(la>37.6) return lo>15.45;
+  return lo > 11.05 + 1.61*(la-36.85);
+}
+
+/* ----------------------------------------------------------- LA GRILLE */
+const isLand=new Uint8Array(N);
+const depth =new Float32Array(N);
+const elev  =new Float32Array(N);
+const basin =new Uint8Array(N);
+const expo  =new Int16Array(N);
+const shade =new Float32Array(N);
+const noise =new Float32Array(N);
+let coastDist=new Float32Array(N);
+
+/* Rasterisation par balayage de lignes : bien plus rapide qu'un test
+   point-dans-polygone par cellule. */
+function scanFill(poly,cb){
+  for(let gy=0;gy<GH_;gy++){
+    const la=gy2lat(gy); const xs=[];
+    for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+      const yi=poly[i][1], yj=poly[j][1];
+      if((yi>la)!==(yj>la)){
+        const xi=poly[i][0], xj=poly[j][0];
+        xs.push(xi+(la-yi)*(xj-xi)/(yj-yi));
+      }
+    }
+    if(xs.length<2)continue;
+    xs.sort((a,b)=>a-b);
+    const row=gy*GW_;
+    for(let k=0;k+1<xs.length;k+=2){
+      let g0=Math.ceil((xs[k]-LON0)*PXDEG-0.5), g1=Math.floor((xs[k+1]-LON0)*PXDEG-0.5);
+      if(g1<0||g0>GW_-1)continue;
+      g0=Math.max(0,g0); g1=Math.min(GW_-1,g1);
+      for(let gx=g0;gx<=g1;gx++) cb(row+gx,gx,gy,la);
+    }
+  }
+}
+function buildGrid(){
+  basin.fill(0); expo.fill(-1);
+  scanFill(MED,(i,gx,gy,la)=>{ basin[i]=isEast(gx2lon(gx),la)?3:2; });
+  scanFill(BLACK,i=>basin[i]=4);
+  scanFill(MARM,i=>basin[i]=4);
+  scanFill(ATL,i=>basin[i]=1);
+  for(const isl of ISLANDS) scanFill(isl,i=>basin[i]=0);
+  for(let i=0;i<N;i++) isLand[i]=basin[i]?0:1;
+
+  for(let gy=0;gy<GH_;gy++){ const la=gy2lat(gy);
+    for(let gx=0;gx<GW_;gx++){ const lo=gx2lon(gx);
+      noise[gy*GW_+gx]=(Math.sin(lo*137.7+la*91.3)*43758.5453)%1; } }
+
+  // distance à la côte (chanfrein 2 passes)
+  const INF=1e9;
+  for(let i=0;i<N;i++)coastDist[i]=isLand[i]?0:INF;
+  for(let y=0;y<GH_;y++)for(let x=0;x<GW_;x++){const i=y*GW_+x;let v=coastDist[i];
+    if(x>0)v=Math.min(v,coastDist[i-1]+1); if(y>0)v=Math.min(v,coastDist[i-GW_]+1);
+    if(x>0&&y>0)v=Math.min(v,coastDist[i-GW_-1]+1.414); if(x<GW_-1&&y>0)v=Math.min(v,coastDist[i-GW_+1]+1.414);
+    coastDist[i]=v;}
+  for(let y=GH_-1;y>=0;y--)for(let x=GW_-1;x>=0;x--){const i=y*GW_+x;let v=coastDist[i];
+    if(x<GW_-1)v=Math.min(v,coastDist[i+1]+1); if(y<GH_-1)v=Math.min(v,coastDist[i+GW_]+1);
+    if(x<GW_-1&&y<GH_-1)v=Math.min(v,coastDist[i+GW_+1]+1.414); if(x>0&&y<GH_-1)v=Math.min(v,coastDist[i+GW_-1]+1.414);
+    coastDist[i]=v;}
+  // même chose vers l'intérieur des terres
+  const landDist=new Float32Array(N);
+  for(let i=0;i<N;i++)landDist[i]=isLand[i]?INF:0;
+  for(let y=0;y<GH_;y++)for(let x=0;x<GW_;x++){const i=y*GW_+x;let v=landDist[i];
+    if(x>0)v=Math.min(v,landDist[i-1]+1); if(y>0)v=Math.min(v,landDist[i-GW_]+1);
+    if(x>0&&y>0)v=Math.min(v,landDist[i-GW_-1]+1.414); if(x<GW_-1&&y>0)v=Math.min(v,landDist[i-GW_+1]+1.414);
+    landDist[i]=v;}
+  for(let y=GH_-1;y>=0;y--)for(let x=GW_-1;x>=0;x--){const i=y*GW_+x;let v=landDist[i];
+    if(x<GW_-1)v=Math.min(v,landDist[i+1]+1); if(y<GH_-1)v=Math.min(v,landDist[i+GW_]+1);
+    if(x<GW_-1&&y<GH_-1)v=Math.min(v,landDist[i+GW_+1]+1.414); if(x>0&&y<GH_-1)v=Math.min(v,landDist[i+GW_-1]+1.414);
+    landDist[i]=v;}
+
+  // bathymétrie et altimétrie
+  for(let gy=0;gy<GH_;gy++){ const la=gy2lat(gy);
+    for(let gx=0;gx<GW_;gx++){ const i=gy*GW_+gx, lo=gx2lon(gx);
+      if(isLand[i]){
+        let e=Math.min(900,landDist[i]*CELLKM*3.2);
+        for(const r of RANGES){ const u=(lo-r[0])/r[2], v=(la-r[1])/r[3];
+          const g=r[4]*Math.exp(-(u*u+v*v)); if(g>e)e=g; }
+        elev[i]=e*(0.90+0.20*Math.abs(noise[i])); depth[i]=0;
+      } else {
+        let d=0;
+        for(const b of BASINS){ const u=(lo-b[0])/b[2], v=(la-b[1])/b[3];
+          const g=b[4]*Math.exp(-(u*u+v*v)); if(g>d)d=g; }
+        d=Math.min(d,coastDist[i]*CELLKM*11+5);
+        for(const s of SHOALS){ const u=(lo-s[0])/s[2], v=(la-s[1])/s[3];
+          const w=Math.exp(-(u*u+v*v)); if(w>0.05) d=d*(1-w)+Math.min(d,s[4])*w; }
+        // canyons sous-marins : rides fines pour donner du grain au relief noyé
+        const rip=Math.sin(lo*7.3+la*5.1)*Math.sin(lo*3.1-la*9.7);
+        depth[i]=Math.max(4,d*(0.96+0.08*Math.abs(noise[i]))+rip*Math.min(140,d*0.06));
+        elev[i]=0;
+      }
+    }
+  }
+  buildShade();
+}
+/* Ombrage : lumière au nord-ouest, 45° */
+function buildShade(){
+  const H=new Float32Array(N);
+  for(let i=0;i<N;i++) H[i]= isLand[i]? elev[i] : -depth[i];
+  const px=CELLKM*1000, Z=9;
+  const Lx=-0.5, Ly=-0.5, Lz=0.7071;
+  for(let y=0;y<GH_;y++)for(let x=0;x<GW_;x++){
+    const i=y*GW_+x;
+    const xa=x>0?H[i-1]:H[i], xb=x<GW_-1?H[i+1]:H[i];
+    const ya=y>0?H[i-GW_]:H[i], yb=y<GH_-1?H[i+GW_]:H[i];
+    const gx=(xb-xa)/(2*px)*Z, gy=(yb-ya)/(2*px)*Z;
+    const nx=-gx, ny=-gy, nz=1, len=Math.hypot(nx,ny,nz);
+    const s=clamp((nx*Lx+ny*Ly+nz*Lz)/len,0,1)/Lz;   // 1 = terrain plat
+    shade[i]=0.45+0.58*s;                             // 0,45 (ubac) … 1,26 (adret)
+  }
+}
+
+/* --------------------------------------------------------- ÉTAT DU JEU */
+const S={
+  year:1930, frac:0, speed:0,
+  money:18, income:0, spend:0,
+  levelW:0, levelE:0, levelB:0,
+  turbine:0.35, dropW:0, dropE:0, rBase:0, rBaseE:0,
+  power:0, land:0, salW:38, salE:38, biodiv:100,
+  refugees:0, support:52, opinion:58, dust:0, saltArea:0,
+  agriYield:0, vol0W:0, vol0E:0, area0:1, areaE0:1,
+  powerMul:1, costMul:1, incomeMul:1, debtService:0, debtUntil:0,
+  built:{}, prog:{}, active:{},
+  flags:{}, fired:{}, log:[], ended:null, decisions:0,
+  strand:{}, deadPorts:0, quakes:0
+};
+PROJECTS.forEach(p=>{S.prog[p.id]=0;S.built[p.id]=false;S.active[p.id]=false;});
+const nat={}; NATIONS.forEach(n=>nat[n.id]={...n});
+let layer='terrain', showBorders=true, showLabels=true;
+
+/* Le débit turbiné compense une part du déficit : la mer descend d'autant moins. */
+function applyRates(){
+  S.dropW = S.rBase*(1-S.turbine);
+  S.dropE = S.built.sic ? S.rBaseE*(1-S.turbine*0.5) : S.dropW;
+}
+function measure(){
+  let vW=0,vE=0,aW=0,aE=0,land=0,salt=0;
+  for(let i=0;i<N;i++){
+    const b=basin[i]; if(b!==2&&b!==3)continue;
+    const lv=b===2?S.levelW:S.levelE, col=depth[i]+lv;
+    if(col>0){ if(b===2){vW+=col;aW++;} else {vE+=col;aE++;} }
+    else { land++; if(expo[i]>=0&&S.year-expo[i]>6)salt++; }
+  }
+  return {vW:vW*CELL_AREA,vE:vE*CELL_AREA,aW:aW*CELL_AREA,aE:aE*CELL_AREA,
+          land:land*CELL_AREA/1e6, salt:salt*CELL_AREA/1e6};
+}
+function updateExposure(){
+  for(let i=0;i<N;i++){ const b=basin[i]; if(b!==2&&b!==3)continue;
+    const lv=b===2?S.levelW:S.levelE;
+    if(depth[i]+lv<=0){ if(expo[i]<0)expo[i]=S.year; } else expo[i]=-1; }
+}
+const wdist=new Float32Array(N);
+function waterDistance(){
+  const INF=1e9;
+  for(let i=0;i<N;i++){ const b=basin[i]; let w;
+    if(b===1||b===4)w=true; else if(b===2)w=depth[i]+S.levelW>0;
+    else if(b===3)w=depth[i]+S.levelE>0; else w=false;
+    wdist[i]=w?0:INF; }
+  for(let y=0;y<GH_;y++)for(let x=0;x<GW_;x++){const i=y*GW_+x;let v=wdist[i];
+    if(x>0)v=Math.min(v,wdist[i-1]+1); if(y>0)v=Math.min(v,wdist[i-GW_]+1);
+    if(x>0&&y>0)v=Math.min(v,wdist[i-GW_-1]+1.414); if(x<GW_-1&&y>0)v=Math.min(v,wdist[i-GW_+1]+1.414); wdist[i]=v;}
+  for(let y=GH_-1;y>=0;y--)for(let x=GW_-1;x>=0;x--){const i=y*GW_+x;let v=wdist[i];
+    if(x<GW_-1)v=Math.min(v,wdist[i+1]+1); if(y<GH_-1)v=Math.min(v,wdist[i+GW_]+1);
+    if(x<GW_-1&&y<GH_-1)v=Math.min(v,wdist[i+GW_+1]+1.414); if(x>0&&y<GH_-1)v=Math.min(v,wdist[i+GW_-1]+1.414); wdist[i]=v;}
+}
+let baseStrand={};
+function computeStrand(first){
+  waterDistance();
+  for(const c of CITIES){
+    const gx=clamp(Math.round(lon2x(c.lo)),0,GW_-1), gy=clamp(Math.round(lat2y(c.la)),0,GH_-1);
+    const km=wdist[gy*GW_+gx]*CELLKM;
+    if(first)baseStrand[c.n]=km;
+    S.strand[c.n]=Math.max(0,km-(baseStrand[c.n]||0));
+  }
+}
+
+/* ------------------------------------------------------------- JOURNAL */
+function log(t,cls){ S.log.unshift({y:S.year,t,cls:cls||''}); if(S.log.length>140)S.log.pop(); drawLog(); }
+function drawLog(){
+  document.getElementById('log').innerHTML=S.log.slice(0,50).map(e=>`<div class="${e.cls}"><b>${e.y}</b>${e.t}</div>`).join('');
+}
+
+/* ------------------------------------------------------------ ÉVÉNEMENTS */
+/* Effets — raccourcis utilisés par les choix */
+const SUD=["MA","TN","DZ","LY","EG","CG","TR","LV"];
+const RIV=["ES","FR","IT","GR","TR","EG","LY","TN","DZ","YU","LV","MA"];
+const E={
+  m:n=>{S.money+=n;},
+  s:n=>{S.support=clamp(S.support+n,0,100);},
+  o:n=>{S.opinion=clamp(S.opinion+n,0,100);},
+  a:(id,n)=>{ if(nat[id]) nat[id].att=clamp(nat[id].att+n,0,100); },
+  aa:(ids,n)=>ids.forEach(i=>E.a(i,n)),
+  r:n=>{S.refugees=Math.max(0,S.refugees+n);},
+  b:n=>{S.biodiv=clamp(S.biodiv+n,0,100);},
+  f:k=>{S.flags[k]=true;},
+  dette:(md,serv,ans)=>{ S.money+=md; S.debtService+=serv; S.debtUntil=Math.max(S.debtUntil,S.year+ans);
+    log(`Emprunt de ${md} Md : service de ${fmt(serv,1)} Md/an jusqu'en ${S.debtUntil}.`); },
+  gel:a=>{S.flags.freeze=S.year+a;},
+  retard:(id,f)=>{ S.prog[id]=Math.max(0,S.prog[id]-f); }
+};
+
+/* --- Bibliothèque de décisions ------------------------------------- */
+/* fy : année imposée · y : fenêtre · c : condition · rep : répétable après n ans */
+const DECISIONS=[
+/* ============ DIPLOMATIE ============ */
+{id:"souv",t:"Le mémorandum espagnol",k:"Diplomatie",y:[1930,1950],p:3,c:()=>!S.built.gib,
+ x:"Madrid rappelle que le détroit est espagnol au nord et chérifien au sud. Le ministre des Travaux publics vous reçoit avec un projet de loi déjà rédigé : la souveraineté sur l'ouvrage revient à l'Espagne, l'Institut n'en est que le concessionnaire pour quatre-vingt-dix-neuf ans.",
+ o:[["Signer la concession","Espagne +22 · Royaume-Uni −10",()=>{E.a("ES",22);E.a("UK",-10);}],
+    ["Exiger un statut international","Espagne −12 · soutien +6",()=>{E.a("ES",-12);E.s(6);}],
+    ["Convaincre les Cortès — 6 Md","Espagne +28 · trésor −6",()=>{E.a("ES",28);E.m(-6);}]]},
+
+{id:"rock",t:"Le Rocher",k:"Diplomatie",y:[1930,1962],p:3,c:()=>!nat.UK.mem,
+ x:"Londres ne discute pas le principe : elle discute la Royal Navy. Un barrage ferme la Méditerranée à ses cuirassés, et Gibraltar cesse d'être une clé pour devenir un cul-de-sac. L'Amirauté a fait ses calculs : une écluse de trois cents mètres, ou rien.",
+ o:[["Construire l'écluse militaire — 9 Md","Royaume-Uni +32 · trésor −9",()=>{E.a("UK",32);E.m(-9);}],
+    ["Promettre un droit de passage perpétuel","Royaume-Uni +14 · opinion −6",()=>{E.a("UK",14);E.o(-6);}],
+    ["Répondre que la mer n'est à personne","Royaume-Uni −16 · opinion +5",()=>{E.a("UK",-16);E.o(5);}]]},
+
+{id:"makhzen",t:"Le sultan et le détroit",k:"Diplomatie",y:[1930,1956],p:2,
+ x:"Le Résident général à Rabat vous fait savoir que le sultan n'a pas d'avis sur Atlantropa, et que la France en a un pour lui. Le Makhzen, lui, vous a écrit directement.",
+ o:[["Traiter par Paris","France +14 · Maroc −12",()=>{E.a("FR",14);E.a("MA",-12);}],
+    ["Traiter avec le Makhzen","Maroc +22 · France −12",()=>{E.a("MA",22);E.a("FR",-12);}],
+    ["Verser une rente annuelle — 4 Md","Maroc +24 · trésor −4",()=>{E.a("MA",24);E.m(-4);}]]},
+
+{id:"rome",t:"Rome veut sa route",k:"Diplomatie",y:[1935,1944],p:3,
+ x:"Le Duce propose vingt mille ouvriers pour la digue Sicile-Tunisie. Une clause y est jointe : l'ouvrage portera le nom d'une route impériale et l'Afrique du Nord relèvera de l'Italie.",
+ o:[["Accepter la clause","Italie +26 · +6 Md · opinion −16 · Sud −12",()=>{E.a("IT",26);E.m(6);E.o(-16);E.s(-8);E.aa(["TN","LY","FR"],-12);}],
+    ["Prendre les ouvriers, refuser la clause","Italie +8",()=>{E.a("IT",8);}],
+    ["Refuser en bloc","Italie −18 · opinion +8",()=>{E.a("IT",-18);E.o(8);}]]},
+
+{id:"montreux",t:"Convention de Montreux",k:"Diplomatie",fy:1936,
+ x:"La Turquie recouvre la souveraineté militaire sur les Détroits. Votre barrage des Dardanelles cesse d'être un problème d'ingénieur pour devenir une question de droit international.",
+ o:[["Reconnaître sans réserve","Turquie +24 · soutien −4",()=>{E.a("TR",24);E.s(-4);}],
+    ["Demander un régime d'exception","Turquie −16",()=>{E.a("TR",-16);}],
+    ["Offrir la moitié des recettes","Turquie +32 · −0,8 Md/an pendant 30 ans",()=>{E.a("TR",32);S.debtService+=0.8;S.debtUntil=Math.max(S.debtUntil,S.year+30);}]]},
+
+{id:"cairo",t:"Le Caire a lu le plan",k:"Diplomatie",y:[1934,1962],p:3,
+ x:"Si la Méditerranée descend de deux cents mètres, le canal de Suez devient une cascade — et l'Égypte, un pays sans canal. Le ministère des Travaux publics vous demande ce que vous comptez faire de sa principale ressource.",
+ o:[["Financer les écluses à fonds perdu — 10 Md","Égypte +30",()=>{E.a("EG",30);E.m(-10);}],
+    ["Proposer une redevance sur le trafic","Égypte +12 · recettes −0,4 Md/an",()=>{E.a("EG",12);S.debtService+=0.4;S.debtUntil=Math.max(S.debtUntil,S.year+40);}],
+    ["Répondre que le canal est britannique","Égypte −24 · Royaume-Uni +8",()=>{E.a("EG",-24);E.a("UK",8);}]]},
+
+{id:"congo",t:"La cuvette du Congo",k:"Diplomatie",y:[1935,1965],p:2,
+ x:"Le barrage du Congo noierait la cuvette centrale pour créer une mer intérieure : douze millions de personnes, deux cents langues. L'administration coloniale attend vos instructions et n'a pas l'air troublée.",
+ o:[["Procéder au déplacement — 12 Md","+6 M déplacés · opinion −18 · Congo −20",()=>{E.m(-12);E.r(6);E.o(-18);E.a("CG",-20);}],
+    ["Réduire le barrage de moitié — 5 Md","+1,5 M déplacés · projet Congo affaibli",()=>{E.m(-5);E.r(1.5);E.f("congoSmall");}],
+    ["Renoncer à l'Afrique intérieure","Congo +14 · soutien −8",()=>{E.a("CG",14);E.s(-8);E.f("noCongo");}]]},
+
+{id:"bandung",t:"Conférence de Bandung",k:"Diplomatie",fy:1955,
+ x:"Vingt-neuf nations d'Asie et d'Afrique se réunissent. Atlantropa y est décrit en une phrase qui fera le tour du monde : « le dernier rêve colonial de l'Europe, exécuté à la pelle mécanique ».",
+ o:[["Offrir une codirection aux riverains du Sud","Sud +14 · soutien −8",()=>{E.aa(SUD,14);E.s(-8);}],
+    ["Lancer une campagne de presse — 5 Md","opinion +9 · Sud −8",()=>{E.m(-5);E.o(9);E.aa(SUD,-8);}],
+    ["Ne pas répondre","Sud −14 · opinion −6",()=>{E.aa(SUD,-14);E.o(-6);}]]},
+
+{id:"soviet",t:"L'impérialisme hydraulique",k:"Diplomatie",y:[1948,1980],p:2,
+ x:"Moscou publie une brochure de quatre-vingts pages : Atlantropa, ou l'impérialisme hydraulique. Les partis communistes français et italien la reprennent mot pour mot dans leurs congrès.",
+ o:[["Ouvrir le consortium à l'Est","soutien +12 · Royaume-Uni −14 · opinion +4",()=>{E.s(12);E.a("UK",-14);E.o(4);}],
+    ["Répondre point par point — 3 Md","opinion +6",()=>{E.m(-3);E.o(6);}],
+    ["Mépriser","opinion −7",()=>{E.o(-7);}]]},
+
+{id:"onu",t:"Commission des Nations unies",k:"Diplomatie",y:[1950,2100],p:2,
+ x:"Une commission demande à visiter le chantier, à consulter vos relevés de salinité et à publier ses conclusions sans droit de regard de votre part.",
+ o:[["Ouvrir grand les portes","soutien +9 · opinion +8 · vos données deviennent publiques",()=>{E.s(9);E.o(8);E.f("audit");}],
+    ["Accueillir une délégation choisie","soutien +3",()=>{E.s(3);}],
+    ["Refuser l'inspection","soutien −12 · opinion −9",()=>{E.s(-12);E.o(-9);}]]},
+
+{id:"franco",t:"Douze mille hommes",k:"Diplomatie",y:[1940,1958],p:2,
+ x:"Le régime de Franco propose douze mille prisonniers politiques pour le chantier de Gibraltar. Le coût de la main-d'œuvre serait divisé par six. Le contrat tient en une page.",
+ o:[["Accepter","+8 Md · Espagne +12 · opinion −24",()=>{E.m(8);E.a("ES",12);E.o(-24);E.f("forcats");}],
+    ["Refuser publiquement","Espagne −16 · opinion +14 · soutien +5",()=>{E.a("ES",-16);E.o(14);E.s(5);}],
+    ["Refuser discrètement","Espagne −5 · opinion +4",()=>{E.a("ES",-5);E.o(4);}]]},
+
+{id:"ceca",t:"La Haute Autorité",k:"Diplomatie",y:[1951,1965],p:3,
+ x:"Six pays européens viennent de mettre en commun leur charbon et leur acier. Le président de la Haute Autorité vous reçoit : Atlantropa pourrait devenir le grand chantier fédérateur de l'Europe — à condition d'en abandonner la direction.",
+ o:[["Adosser l'Institut à la Communauté","France +16 · Italie +16 · soutien +12 · RU −10 · recettes ×1,2",()=>{E.a("FR",16);E.a("IT",16);E.s(12);E.a("UK",-10);S.incomeMul*=1.2;}],
+    ["Demander seulement un prêt","+14 Md · service 0,7 Md/an pendant 30 ans",()=>{E.dette(14,0.7,30);}],
+    ["Rester indépendant","soutien −5",()=>{E.s(-5);}]]},
+
+{id:"cyprus",t:"Chypre",k:"Diplomatie",y:[1955,1968],p:2,
+ x:"L'île s'embrase. Londres tient à ses bases souveraines, Athènes et Ankara se disputent le reste, et votre bassin oriental dépend des trois.",
+ o:[["Neutralité stricte","soutien −4",()=>{E.s(-4);}],
+    ["Soutenir Londres","RU +16 · Grèce −12 · Turquie −10",()=>{E.a("UK",16);E.a("GR",-12);E.a("TR",-10);}],
+    ["Proposer une médiation de l'Institut","Grèce +10 · Turquie +10 · RU −10",()=>{E.a("GR",10);E.a("TR",10);E.a("UK",-10);}]]},
+
+/* ============ INGÉNIERIE ============ */
+{id:"caissons",t:"La houle retourne les caissons",k:"Ingénierie",y:[1932,2100],p:3,c:()=>S.active.gib||(S.prog.gib>0&&!S.built.gib),
+ x:"L'Atlantique n'accepte pas qu'on le contredise. Trois caissons de béton de quarante mille tonnes ont basculé avant leur prise. Les scaphandriers refusent de redescendre.",
+ o:[["Doubler l'épaisseur — 8 Md","ouvrage renforcé",()=>{E.m(-8);E.f("solide");}],
+    ["Attendre les fenêtres météo","deux ans de retard",()=>{E.retard("gib",0.16);}],
+    ["Poursuivre malgré tout","risque de sinistre",()=>{ if(Math.random()<0.45){E.m(-13);E.o(-9);log("Le caisson n° 7 s'est ouvert. Onze morts.","bad");} else log("Le pari a tenu. Personne n'en parle.","good"); }]]},
+
+{id:"tower",t:"La tour de Behrens",k:"Ingénierie",y:[1932,1960],p:2,c:()=>!S.flags.tower,
+ x:"Peter Behrens a dessiné la tour : quatre cents mètres de béton armé au-dessus des écluses, un phare pour un continent. Elle ne sert strictement à rien, et c'est tout l'argument.",
+ o:[["La construire — 6 Md","opinion +15 · soutien +8",()=>{E.m(-6);E.o(15);E.s(8);E.f("tower");}],
+    ["La reporter","",()=>{}],
+    ["L'annuler","opinion −5 · +2 Md",()=>{E.o(-5);E.m(2);}]]},
+
+{id:"undertow",t:"Le courant de fond",k:"Ingénierie",y:[1930,2100],p:3,c:()=>S.built.gib&&S.levelW<-10,
+ x:"La veine d'eau salée qui sortait vers l'Atlantique n'existe plus. À sa place, un courant entrant creuse le pied de la digue à quarante mètres sous la surface. Le sondeur montre une fosse qui grandit de deux mètres par an.",
+ o:[["Enrochement massif — 11 Md","ouvrage sécurisé",()=>{E.m(-11);E.f("solide");}],
+    ["Réduire le débit turbiné","turbines à 20 %",()=>{S.turbine=Math.min(S.turbine,0.2);applyRates();}],
+    ["Surveiller et attendre","risque de brèche",()=>{E.f("fragile");}]]},
+
+{id:"kaplan",t:"Turbines à pales orientables",k:"Ingénierie",y:[1948,1990],p:2,c:()=>S.built.gib,
+ x:"Un ingénieur autrichien propose de remplacer les Francis par des Kaplan : rendement bien supérieur aux faibles chutes, c'est-à-dire précisément là où vous êtes.",
+ o:[["Rééquiper — 9 Md","puissance +12 %",()=>{E.m(-9);S.powerMul*=1.12;}],
+    ["Attendre la génération suivante","",()=>{}],
+    ["Refuser","opinion −3",()=>{E.o(-3);}]]},
+
+{id:"corrosion",t:"Le sel dans les machines",k:"Ingénierie",y:[1930,2100],p:3,c:()=>S.built.gib&&S.salW>39,
+ x:"À trente-neuf grammes par litre, l'eau n'est plus de l'eau de mer, c'est un électrolyte. Les aubes se piquent, les paliers grippent, les arrêts se multiplient.",
+ o:[["Aciers spéciaux et anodes — 7 Md","aucune perte",()=>{E.m(-7);}],
+    ["Arrêts d'entretien fréquents","puissance −8 %",()=>{S.powerMul*=0.92;}],
+    ["Laisser tourner jusqu'à la casse","puissance −16 % · opinion −5",()=>{S.powerMul*=0.84;E.o(-5);}]]},
+
+{id:"gallipoli",t:"Gallipoli",k:"Ingénierie",y:[1930,2100],p:3,c:()=>S.active.dard||(S.prog.dard>0&&!S.built.dard),
+ x:"La digue des Dardanelles s'appuie sur la presqu'île de Gallipoli. Les pelleteuses en remontent des ossements de 1915 par pleines bennes : Australiens, Néo-Zélandais, Turcs, mêlés.",
+ o:[["Ossuaire et mémorial — 3 Md","opinion +12 · RU +10 · Turquie +10",()=>{E.m(-3);E.o(12);E.a("UK",10);E.a("TR",10);}],
+    ["Déplacer le tracé","deux ans de retard",()=>{E.retard("dard",0.28);}],
+    ["Poursuivre sans rien dire","opinion −14 · RU −12",()=>{E.o(-14);E.a("UK",-12);}]]},
+
+{id:"messina",t:"L'avertissement de Catane",k:"Ingénierie",y:[1935,2100],p:2,c:()=>S.active.sic||S.built.sic,
+ x:"Un géologue de Catane vous rappelle que le détroit de Messine a tué quatre-vingt-deux mille personnes en 1908, que la faille est toujours là, et que vous voulez y poser une digue de béton.",
+ o:[["Campagne sismique complète — 5 Md","ouvrage adapté",()=>{E.m(-5);E.f("sismique");}],
+    ["Surdimensionner sans étudier — 8 Md","",()=>{E.m(-8);E.f("sismique");}],
+    ["Passer outre","risque durable",()=>{E.f("sismRisk");}]]},
+
+{id:"silt",t:"Les fleuves avancent",k:"Ingénierie",y:[1930,2100],p:2,c:()=>S.built.gib&&S.levelW<-30,
+ x:"Le Rhône, le Pô et le Nil continuent de charrier. Leurs deltas progressent dans le vide à des vitesses jamais vues et ensablent tout ce qu'ils atteignent, y compris vos prises d'eau.",
+ o:[["Dragage permanent","−0,6 Md/an pendant 40 ans",()=>{S.debtService+=0.6;S.debtUntil=Math.max(S.debtUntil,S.year+40);}],
+    ["Canaliser les fleuves — 14 Md","terres +, opinion +6",()=>{E.m(-14);E.o(6);}],
+    ["Laisser les deltas faire","ports encore plus loin de la mer",()=>{E.f("deltas");}]]},
+
+{id:"link",t:"La liaison des deux continents",k:"Ingénierie",y:[1930,2100],p:3,c:()=>S.built.sic,
+ x:"La digue Sicile-Tunisie peut porter une route, une voie ferrée, ou les deux. C'est le seul élément du plan que tout le monde approuve : relier physiquement l'Europe et l'Afrique.",
+ o:[["Autoroute et rail — 12 Md","recettes ×1,15 · opinion +10",()=>{E.m(-12);S.incomeMul*=1.15;E.o(10);}],
+    ["Route seule — 5 Md","recettes ×1,06 · opinion +5",()=>{E.m(-5);S.incomeMul*=1.06;E.o(5);}],
+    ["Une digue reste une digue","",()=>{}]]},
+
+{id:"breach",t:"Brèche",k:"Ingénierie",y:[1930,2100],p:1,c:()=>S.built.gib&&S.levelW<-40&&!S.flags.solide,
+ x:"Deux cent quarante mètres de digue emportés avant l'aube. La mer est remontée de trois mètres en huit jours, dans un bruit qu'on entendait à Tanger, avant qu'on ne parvienne à colmater.",
+ o:[["Reconstruction lourde — 16 Md","ouvrage définitivement sécurisé",()=>{E.m(-16);E.f("solide");E.o(-6);S.levelW=Math.min(0,S.levelW+3);baseDirty=true;}],
+    ["Colmatage économique — 7 Md","risque de récidive",()=>{E.m(-7);E.o(-10);S.levelW=Math.min(0,S.levelW+3);baseDirty=true;}],
+    ["Décréter l'état d'urgence et réquisitionner","−3 Md · opinion −16 · soutien +6",()=>{E.m(-3);E.o(-16);E.s(6);S.levelW=Math.min(0,S.levelW+3);baseDirty=true;}]]},
+
+{id:"hvdc",t:"Courant continu",k:"Ingénierie",y:[1958,2010],p:2,c:()=>S.built.grd,
+ x:"Les Suédois transportent du courant continu sur mille kilomètres sans tout perdre en route. Votre réseau alternatif dissipe un tiers de sa production entre Gibraltar et la Ruhr.",
+ o:[["Convertir le réseau — 10 Md","recettes ×1,25",()=>{E.m(-10);S.incomeMul*=1.25;}],
+    ["Convertir la dorsale seulement — 4 Md","recettes ×1,1",()=>{E.m(-4);S.incomeMul*=1.1;}],
+    ["Rester en alternatif","",()=>{}]]},
+
+/* ============ ÉCONOMIE ============ */
+{id:"crash",t:"Les banques ferment",k:"Économie",fy:1931,
+ x:"La Danatbank tombe, le Reich suspend ses paiements, les bourses ferment quatre jours. Votre budget de l'année s'évapore avant d'avoir servi.",
+ o:[["Réduire la voilure","−3 Md · soutien −5",()=>{E.m(-3);E.s(-5);}],
+    ["Emprunter à l'étranger","+10 Md · service 0,7 Md/an pendant 30 ans",()=>{E.dette(10,0.7,30);}],
+    ["Tout suspendre un an","soutien −10 · opinion −4",()=>{E.s(-10);E.o(-4);E.gel(2);}]]},
+
+{id:"bonds",t:"L'emprunt atlantropéen",k:"Économie",y:[1930,2100],p:3,rep:25,
+ x:"L'Institut peut émettre un emprunt gagé sur l'électricité future. Les banquiers de Bâle sont intéressés : ils veulent seulement savoir quand la première turbine tournera.",
+ o:[["Emprunt de 20 Md","service 1,2 Md/an pendant 40 ans",()=>{E.dette(20,1.2,40);}],
+    ["Emprunt de 10 Md","service 0,55 Md/an pendant 30 ans",()=>{E.dette(10,0.55,30);}],
+    ["Ne pas s'endetter","soutien +3",()=>{E.s(3);}]]},
+
+{id:"strike",t:"Grève des bétonniers",k:"Économie",y:[1930,2100],p:3,rep:22,c:()=>Object.values(S.active).some(v=>v),
+ x:"Les bétonniers ont posé les outils. Ils demandent la journée de huit heures, une prime de fond et, littéralement, un cimetière qui ne soit pas la mer.",
+ o:[["Céder sur tout — 3 Md","opinion +14 · chantiers ralentis un an",()=>{E.m(-3);E.o(14);}],
+    ["Négocier — 1 Md","opinion +5",()=>{E.m(-1);E.o(5);}],
+    ["Briser la grève","+2 Md · opinion −20 · soutien +5",()=>{E.m(2);E.o(-20);E.s(5);}]]},
+
+{id:"dead",t:"Le chiffre",k:"Économie",y:[1934,2100],p:2,c:()=>S.built.gib||S.prog.gib>0.4,
+ x:"Mille quatre cents morts depuis l'ouverture du chantier de Gibraltar. Le chiffre fuite dans la presse munichoise, accompagné de la liste des noms.",
+ o:[["Publier et indemniser — 5 Md","opinion +14",()=>{E.m(-5);E.o(14);}],
+    ["Contester le décompte","opinion −12",()=>{E.o(-12);}],
+    ["Ne rien dire","opinion −7",()=>{E.o(-7);}]]},
+
+{id:"dumping",t:"Des gigawatts sans clients",k:"Économie",y:[1930,2100],p:3,c:()=>S.power>12,
+ x:"Vos gigawatts n'ont pas d'acheteur. Les électriciens nationaux protègent leurs charbonnages, et personne n'a envie d'expliquer à ses mineurs qu'une mer les remplace.",
+ o:[["Vendre à perte pour capter l'industrie","−6 Md · recettes ×1,3 ensuite",()=>{E.m(-6);S.incomeMul*=1.3;}],
+    ["Créer vos propres industries — 12 Md","recettes ×1,2 · opinion −4",()=>{E.m(-12);S.incomeMul*=1.2;E.o(-4);}],
+    ["Attendre que la demande vienne","soutien −6",()=>{E.s(-6);}]]},
+
+{id:"alu",t:"L'aluminium",k:"Économie",y:[1935,2100],p:2,c:()=>S.power>25,
+ x:"L'aluminium ne se fabrique pas, il s'électrolyse. Installer les fonderies au pied même du barrage supprimerait tout transport d'énergie.",
+ o:[["Construire les fonderies — 10 Md","recettes ×1,2 · opinion −6",()=>{E.m(-10);S.incomeMul*=1.2;E.o(-6);}],
+    ["Concéder à des tiers","recettes ×1,08",()=>{S.incomeMul*=1.08;}],
+    ["Refuser","opinion +3",()=>{E.o(3);}]]},
+
+{id:"tourism",t:"Marchez là où nageaient les thons",k:"Économie",y:[1930,2100],p:2,c:()=>S.land>12000,
+ x:"Une agence de voyage munichoise propose des excursions au fond de la mer. La première brochure est déjà imprimée ; la couverture montre une famille pique-niquant sur une plaine de sel.",
+ o:[["Autoriser et taxer","recettes ×1,06 · opinion +7",()=>{S.incomeMul*=1.06;E.o(7);}],
+    ["Créer un parc national des fonds — 4 Md","opinion +15 · biodiversité +3",()=>{E.m(-4);E.o(15);E.b(3);}],
+    ["Interdire","opinion −4",()=>{E.o(-4);}]]},
+
+{id:"landspec",t:"La ruée",k:"Économie",y:[1930,2100],p:3,c:()=>S.land>35000,
+ x:"La terre découverte n'appartient à personne : c'était le fond d'une mer internationale. Des sociétés se constituent à Zurich pour l'acheter avant qu'elle ne sèche.",
+ o:[["Vendre les concessions","+18 Md · opinion −14 · soutien +5",()=>{E.m(18);E.o(-14);E.s(5);}],
+    ["Domaine public atlantropéen","opinion +13 · soutien −6",()=>{E.o(13);E.s(-6);}],
+    ["Partager entre les États riverains","riverains +14 · soutien +4",()=>{E.aa(RIV,14);E.s(4);}]]},
+
+{id:"insurance",t:"Plus personne ne veut assurer",k:"Économie",y:[1930,2100],p:2,c:()=>S.levelW<-55,
+ x:"Aucun réassureur n'accepte de couvrir un ouvrage dont la rupture viderait ou remplirait une mer. Les Lloyd's ont répondu en trois lignes et une virgule.",
+ o:[["Constituer une réserve — 12 Md","sécurité financière",()=>{E.m(-12);E.f("reserve");}],
+    ["Garantie des États membres","soutien −9",()=>{E.s(-9);}],
+    ["Continuer sans assurance","risque",()=>{E.f("noins");}]]},
+
+{id:"budget",t:"Arbitrage budgétaire",k:"Économie",y:[1930,2100],p:2,rep:14,
+ x:"Le conseil de l'Institut se réunit pour l'exercice. Les postes ne peuvent pas tous être servis, et chacun a son avocat autour de la table.",
+ o:[["Priorité aux ouvrages","coûts −15 % · opinion −6",()=>{S.costMul*=0.85;E.o(-6);}],
+    ["Priorité au social et aux ports","opinion +10 · coûts +10 %",()=>{E.o(10);S.costMul*=1.1;}],
+    ["Priorité à la diplomatie","toutes nations +6 · −2 Md",()=>{E.aa(Object.keys(nat),6);E.m(-2);}]]},
+
+/* ============ SOCIAL & VILLES ============ */
+{id:"venice",t:"La lettre du patriarche",k:"Villes",y:[1930,2100],p:4,c:()=>S.levelW<-12&&!S.built.ven,
+ x:"Le patriarche de Venise vous écrit. La lagune baisse ; les pilotis de mélèze, huit siècles sous l'eau, commencent à pourrir à l'air libre. Il ne demande pas l'arrêt du projet, il demande une digue.",
+ o:[["Lancer la digue de Venise","chantier ouvert · Italie +14",()=>{S.active.ven=true;E.a("IT",14);}],
+    ["Proposer de déplacer la ville — 20 Md","opinion −22 · Italie −22",()=>{E.m(-20);E.o(-22);E.a("IT",-22);}],
+    ["Répondre que Venise s'adaptera","opinion −16 · Italie −18",()=>{E.o(-16);E.a("IT",-18);}]]},
+
+{id:"sete",t:"Les filets brûlés",k:"Villes",y:[1930,2100],p:3,c:()=>S.salW>39.2,
+ x:"À Sète, à Mazara del Vallo, à Sfax, les pêcheurs brûlent leurs filets devant les préfectures. Ils ne demandent pas d'aide, ils demandent qu'on leur rende la mer.",
+ o:[["Fonds de reconversion — 8 Md","opinion +12 · riverains +8",()=>{E.m(-8);E.o(12);E.aa(RIV,8);}],
+    ["Ouvrir des quotas en Atlantique","opinion +5 · Espagne −8 · Maroc −8",()=>{E.o(5);E.a("ES",-8);E.a("MA",-8);}],
+    ["Ce n'est pas notre affaire","opinion −16 · riverains −10",()=>{E.o(-16);E.aa(RIV,-10);}]]},
+
+{id:"marseille",t:"Marseille sans mer",k:"Villes",y:[1930,2100],p:3,c:()=>(S.strand["Marseille"]||0)>8,
+ x:"La chambre de commerce de Marseille a voté à l'unanimité : un canal jusqu'au nouveau rivage, ou la fin du projet. Le préfet transmet sans commentaire.",
+ o:[["Creuser le canal — 9 Md","France +14 · opinion +9",()=>{E.m(-9);E.a("FR",14);E.o(9);}],
+    ["Lancer les ports en cascade","chantier ouvert",()=>{S.active.prt=true;}],
+    ["Refuser","France −18 · opinion −12",()=>{E.a("FR",-18);E.o(-12);}]]},
+
+{id:"colons",t:"Qui peuplera les terres neuves ?",k:"Villes",y:[1930,2100],p:4,c:()=>S.land>22000,
+ x:"C'est la question que le plan de Sörgel tranche en une ligne : des Européens. Les gouvernements riverains, qui ont lu la même ligne, demandent audience.",
+ o:[["Colonisation européenne","soutien +10 · Sud −26 · opinion −8",()=>{E.s(10);E.aa(SUD,-26);E.o(-8);E.f("colonial");}],
+    ["Priorité aux populations riveraines","riverains +18 · soutien −12",()=>{E.aa(RIV,18);E.s(-12);}],
+    ["Attribution par tirage international","opinion +8 · soutien −4",()=>{E.o(8);E.s(-4);}]]},
+
+{id:"wells",t:"Les puits tournent",k:"Villes",y:[1930,2100],p:3,c:()=>S.levelW<-45,
+ x:"Les nappes côtières se vident vers le nouveau niveau de base. De Sousse à Lattaquié, les puits donnent une eau saumâtre que les oliviers ne supportent pas.",
+ o:[["Grand programme d'adduction — 13 Md","riverains +14 · opinion +8",()=>{E.m(-13);E.aa(RIV,14);E.o(8);}],
+    ["Forages profonds — 6 Md","riverains +6",()=>{E.m(-6);E.aa(RIV,6);}],
+    ["Laisser les États s'en charger","+1,5 M déplacés · riverains −14",()=>{E.r(1.5);E.aa(RIV,-14);}]]},
+
+{id:"dusthealth",t:"Du gypse dans les poumons",k:"Villes",y:[1930,2100],p:4,c:()=>S.dust>16,
+ x:"Les hôpitaux de Provence et de Campanie signalent des bronchiolites d'un genre nouveau chez les enfants. Les prélèvements contiennent du gypse et de l'halite en fines aiguilles.",
+ o:[["Fixer la croûte par plantation — 15 Md","poussière −40 % · opinion +14",()=>{E.m(-15);E.f("fixation");E.o(14);}],
+    ["Étude épidémiologique — 3 Md","opinion +5",()=>{E.m(-3);E.o(5);}],
+    ["Contester le lien de causalité","opinion −20",()=>{E.o(-20);}]]},
+
+{id:"alex",t:"Alexandrie",k:"Villes",y:[1930,2100],p:3,c:()=>(S.strand["Alexandrie"]||0)>10,
+ x:"Port depuis Alexandre. Le rivage est à quarante kilomètres, le delta se dessèche par le bas, et deux millions de personnes vivent d'un trafic qui n'existe plus.",
+ o:[["Chenal de prolongement — 10 Md","Égypte +16 · opinion +8",()=>{E.m(-10);E.a("EG",16);E.o(8);}],
+    ["Aider à la relocalisation — 6 Md","Égypte +6 · +1 M déplacés",()=>{E.m(-6);E.a("EG",6);E.r(1);}],
+    ["Rien","Égypte −22 · +2 M déplacés",()=>{E.a("EG",-22);E.r(2);}]]},
+
+/* ============ SCIENCE & MILIEU ============ */
+{id:"rouch",t:"Le rapport Rouch",k:"Science",y:[1934,1958],p:3,
+ x:"L'océanographe Jules Rouch publie ses relevés : la Méditerranée perd déjà près d'un mètre d'eau par an par évaporation, entièrement compensé par l'Atlantique. Sa conclusion tient en une phrase : « Fermez le détroit et vous obtiendrez une saumure. »",
+ o:[["Financer une contre-expertise — 4 Md","opinion +6 · vérité retardée",()=>{E.m(-4);E.o(6);E.f("deni");}],
+    ["Publier ses données dans votre bulletin","opinion +12 · soutien −7",()=>{E.o(12);E.s(-7);}],
+    ["L'engager comme conseiller — 3 Md","opinion +8 · décisions mieux informées",()=>{E.m(-3);E.o(8);E.f("science");}]]},
+
+{id:"glomar",t:"Les carottes du Glomar Challenger",k:"Science",fy:1971,
+ x:"Le navire de forage remonte des carottes du fond ionien : des évaporites sur des kilomètres d'épaisseur. La Méditerranée s'est asséchée toute seule il y a cinq millions et demi d'années. La crise messinienne a duré six cent mille ans, et n'a presque rien laissé vivant.",
+ o:[["Y voir la preuve que c'est faisable","soutien +9 · opinion −12",()=>{E.s(9);E.o(-12);}],
+    ["Y voir un avertissement","opinion +14 · soutien −9",()=>{E.o(14);E.s(-9);E.f("averti");}],
+    ["Classer le rapport sans suite","opinion −8",()=>{E.o(-8);}]]},
+
+{id:"tuna",t:"Les madragues ferment",k:"Science",y:[1930,2100],p:3,c:()=>S.salW>39.8,
+ x:"Le thon rouge ne revient pas frayer. Les madragues de Sicile et d'Andalousie ferment après trois mille ans d'exploitation continue, et personne ne sait où il est passé.",
+ o:[["Réserve de reproduction — 6 Md","biodiversité +5 · opinion +9",()=>{E.m(-6);E.b(5);E.o(9);}],
+    ["Indemniser les pêcheurs — 5 Md","opinion +6",()=>{E.m(-5);E.o(6);}],
+    ["Rien","opinion −11 · biodiversité −4",()=>{E.o(-11);E.b(-4);}]]},
+
+{id:"posidonia",t:"Les herbiers meurent",k:"Science",y:[1930,2100],p:3,c:()=>S.levelW<-22,
+ x:"Les herbiers de posidonie disparaissent sur des milliers d'hectares. Ils étaient nurserie, filtre et ancrage des sédiments à la fois. Sans eux, les fonds découverts partiront au vent bien plus vite.",
+ o:[["Programme de replantation — 9 Md","biodiversité +7 · poussière réduite",()=>{E.m(-9);E.b(7);E.f("fixation");}],
+    ["Étudier le phénomène — 2 Md","opinion +4",()=>{E.m(-2);E.o(4);}],
+    ["Rien","biodiversité −7",()=>{E.b(-7);}]]},
+
+{id:"gulfstream",t:"Le modèle de Princeton",k:"Science",y:[1975,2100],p:3,c:()=>S.levelW<-70,
+ x:"Un modèle numérique conclut que la disparition de la veine d'eau salée méditerranéenne affaiblit la formation d'eau profonde en Atlantique nord. Sörgel avait promis des hivers plus doux à Londres ; le calcul dit l'inverse.",
+ o:[["Financer la recherche — 5 Md","opinion +10",()=>{E.m(-5);E.o(10);}],
+    ["Financer une contre-étude — 4 Md","soutien +5 · opinion −8",()=>{E.m(-4);E.s(5);E.o(-8);}],
+    ["Ignorer","opinion −9 · RU −10",()=>{E.o(-9);E.a("UK",-10);}]]},
+
+{id:"wrecks",t:"La flotte retrouvée",k:"Science",y:[1930,2100],p:3,c:()=>S.land>7000,
+ x:"Les fonds livrent leur cargaison : navires phéniciens, amphores romaines, un porte-avions de 1943 posé debout, et près de Marsala un bateau punique intact avec ses rames en place.",
+ o:[["Fouilles systématiques — 8 Md","opinion +18 · soutien +5",()=>{E.m(-8);E.o(18);E.s(5);}],
+    ["Vendre des concessions aux chercheurs de trésors","+7 Md · opinion −16",()=>{E.m(7);E.o(-16);}],
+    ["Laisser les ferrailleurs faire","+3 Md · opinion −9",()=>{E.m(3);E.o(-9);}]]},
+
+{id:"sunken",t:"Les villes ressortent",k:"Science",y:[1930,2100],p:3,c:()=>S.land>18000,
+ x:"Le port antique d'Alexandrie, Baïes, Pavlopetri : des quartiers entiers réapparaissent à l'air libre. Sous l'eau ils avaient tenu deux mille ans ; à l'air ils se délitent en une saison.",
+ o:[["Musée à ciel ouvert — 10 Md","opinion +19 · Égypte +10 · Grèce +10",()=>{E.m(-10);E.o(19);E.a("EG",10);E.a("GR",10);}],
+    ["Documenter puis abandonner — 3 Md","opinion +6",()=>{E.m(-3);E.o(6);}],
+    ["Rien","opinion −11",()=>{E.o(-11);}]]},
+
+{id:"mosquito",t:"Les marais du milieu",k:"Science",y:[1930,2100],p:2,c:()=>S.land>26000,
+ x:"Entre l'ancienne côte et la nouvelle s'étendent d'immenses vasières saumâtres qui ne sèchent jamais tout à fait. Le paludisme revient en Adriatique et en Égée, où il avait disparu.",
+ o:[["Assèchement et démoustication — 9 Md","opinion +11",()=>{E.m(-9);E.o(11);}],
+    ["Distribution de quinine — 3 Md","opinion +5",()=>{E.m(-3);E.o(5);}],
+    ["Rien","+1,5 M déplacés · opinion −13",()=>{E.r(1.5);E.o(-13);}]]},
+
+{id:"methane",t:"Les torchères de la plaine",k:"Science",y:[1930,2100],p:2,c:()=>S.levelW<-90,
+ x:"La décompression des sédiments libère le méthane qui y était piégé. Des torchères improvisées brûlent au milieu des plaines de sel, visibles à cinquante kilomètres.",
+ o:[["Capter et vendre — 11 Md","recettes ×1,15",()=>{E.m(-11);S.incomeMul*=1.15;}],
+    ["Torcher proprement — 3 Md","opinion +4",()=>{E.m(-3);E.o(4);}],
+    ["Laisser fuiter","opinion −8",()=>{E.o(-8);}]]},
+
+{id:"aral",t:"Les images de la mer d'Aral",k:"Science",y:[1988,2100],p:3,
+ x:"Des bateaux échoués à cent kilomètres du rivage, une plaine de sel où poussaient des melons, des taux de cancer multipliés par cinq. Les images font le tour du monde, et chacun y reconnaît votre carte en réduction.",
+ o:[["Publier votre propre bilan — 4 Md","opinion +11 · soutien −7",()=>{E.m(-4);E.o(11);E.s(-7);}],
+    ["Souligner les différences d'échelle","opinion −9",()=>{E.o(-9);}],
+    ["Ne rien dire","opinion −13",()=>{E.o(-13);}]]},
+
+{id:"climate",t:"Sommet de la Terre",k:"Science",y:[1992,2100],p:3,
+ x:"Un délégué fait remarquer que le seul ouvrage ayant jamais fait baisser le niveau des océans est le vôtre, et que ce n'est pas pour autant une raison de vous féliciter.",
+ o:[["Revendiquer le bénéfice climatique","soutien +11 · opinion −11",()=>{E.s(11);E.o(-11);}],
+    ["Reconnaître le bilan net","opinion +13 · soutien −9",()=>{E.o(13);E.s(-9);}],
+    ["Se taire","opinion −4",()=>{E.o(-4);}]]},
+
+/* ============ IDÉOLOGIE & OPINION ============ */
+{id:"ww2",t:"La Wehrmacht entre en Pologne",k:"Histoire",fy:1939,
+ x:"Vos ingénieurs reçoivent leur feuille de route. Le ciment part aux fortifications, l'acier aux blindages, et l'Institut n'a plus qu'un secrétariat et des maquettes.",
+ o:[["Mettre l'Institut en sommeil","gel 7 ans · soutien −7",()=>{E.gel(7);E.s(-7);E.m(-2);}],
+    ["Offrir les plans au régime pour survivre","+5 Md · soutien +7 · opinion −26",()=>{E.m(5);E.s(7);E.o(-26);E.f("collab");E.gel(5);}],
+    ["Transférer le siège à Zurich — 6 Md","gel 5 ans · opinion +11",()=>{E.m(-6);E.gel(5);E.o(11);}]]},
+
+{id:"sorgel",t:"Herman Sörgel est mort",k:"Histoire",fy:1952,
+ x:"Renversé ce matin par une voiture, à bicyclette, sur la route de son institut. Soixante-sept ans. Il n'aura jamais vu creuser une pelletée de son continent.",
+ o:[["Poursuivre à la lettre du plan","soutien +7 · opinion −5",()=>{E.s(7);E.o(-5);E.f("orthodoxe");}],
+    ["Réviser le projet à la lumière des faits","opinion +14 · soutien −7",()=>{E.o(14);E.s(-7);E.f("reforme");}],
+    ["En faire un martyr de la technique — 4 Md","opinion +11 · soutien +7",()=>{E.m(-4);E.o(11);E.s(7);}]]},
+
+{id:"nuke",t:"Obninsk produit du courant",k:"Histoire",fy:1954,
+ x:"Une centrale soviétique fabrique de l'électricité à partir d'uranium. Un de vos ingénieurs vous le dit sans détour : l'argument énergétique d'Atlantropa vient de mourir dans une salle de contrôle, à deux mille kilomètres d'ici.",
+ o:[["Recentrer le projet sur les terres et la liaison Afrique","soutien −7 · opinion +7",()=>{E.s(-7);E.o(7);E.f("pivot");}],
+    ["Contester le coût réel du nucléaire — 4 Md","soutien −5 · opinion −5",()=>{E.m(-4);E.s(-5);E.o(-5);}],
+    ["Ne rien changer au discours","soutien −18",()=>{E.s(-18);}]]},
+
+{id:"suezc",t:"Crise de Suez",k:"Histoire",fy:1956,
+ x:"Nasser nationalise le canal. Français et Britanniques débarquent, puis reculent sous la pression américaine. Votre projet d'écluses se retrouve au milieu de la table.",
+ o:[["Reconnaître la nationalisation","Égypte +26 · France −12 · RU −14",()=>{E.a("EG",26);E.a("FR",-12);E.a("UK",-14);}],
+    ["Soutenir l'expédition franco-britannique","France +12 · RU +12 · Sud −24 · opinion −12",()=>{E.a("FR",12);E.a("UK",12);E.aa(SUD,-24);E.o(-12);}],
+    ["Se déclarer hors du conflit","soutien −6",()=>{E.s(-6);}]]},
+
+{id:"deco",t:"Le mot Eurafrique",k:"Histoire",fy:1962,
+ x:"L'Algérie est indépendante. En cinq ans, dix-sept pays africains ont pris leur souveraineté. Le mot Eurafrique, qui figure au fronton de votre institut, est devenu une insulte diplomatique.",
+ o:[["Refonder le consortium sur l'égalité des voix","Sud +22 · soutien −14 · opinion +13",()=>{E.aa(SUD,22);E.s(-14);E.o(13);E.f("refonde");}],
+    ["Traiter avec chaque État séparément — 10 Md","Sud +12",()=>{E.m(-10);E.aa(SUD,12);}],
+    ["Maintenir la structure existante","Sud −28 · soutien −12",()=>{E.aa(SUD,-28);E.s(-12);E.f("deco");}]]},
+
+{id:"oil",t:"Embargo",k:"Histoire",fy:1973,
+ x:"Le baril quadruple en trois mois. Pour la première fois depuis vingt ans, on vous rappelle publiquement qu'une turbine ne consomme rien et n'appartient à aucun cartel.",
+ o:[["Vendre au prix du marché","+16 Md · opinion −9",()=>{E.m(16);E.o(-9);S.flags.oil=true;}],
+    ["Prix bloqués pour les riverains","riverains +18 · opinion +14",()=>{E.aa(RIV,18);E.o(14);E.m(4);S.flags.oil=true;}],
+    ["Investir dans l'extension du réseau — 12 Md","recettes ×1,3",()=>{E.m(-12);S.incomeMul*=1.3;S.flags.oil=true;}]]},
+
+{id:"film",t:"Le film",k:"Opinion",y:[1934,1970],p:2,
+ x:"Un studio propose un long-métrage : la mer se retire au son des cuivres, les moissons couvrent les fonds, des enfants courent vers l'Afrique en agitant des cartes. Le scénario est déjà écrit.",
+ o:[["Financer le film — 5 Md","opinion +15 · Sud −9",()=>{E.m(-5);E.o(15);E.aa(SUD,-9);}],
+    ["Financer un documentaire honnête — 3 Md","opinion +7 · soutien +4",()=>{E.m(-3);E.o(7);E.s(4);}],
+    ["Refuser","",()=>{}]]},
+
+{id:"pamphlet",t:"Le pamphlet",k:"Opinion",y:[1930,2100],p:2,rep:30,
+ x:"Un texte circule sous le manteau : « L'Europe n'a pas besoin d'un continent de plus, elle a besoin d'un contrat social. » Cent mille exemplaires en six mois.",
+ o:[["Répondre publiquement","opinion +5",()=>{E.o(5);}],
+    ["Poursuivre l'auteur en justice","opinion −15",()=>{E.o(-15);}],
+    ["Laisser dire","opinion −4",()=>{E.o(-4);}]]},
+
+{id:"nobel",t:"Une candidature",k:"Opinion",y:[1948,1985],p:2,c:()=>S.support>58,
+ x:"Un comité propose l'Institut pour le prix Nobel de la paix : le plus grand chantier civil de l'histoire, présenté comme l'alternative pacifique à la guerre pour les ressources.",
+ o:[["Accepter la candidature","soutien +13 · opinion +11",()=>{E.s(13);E.o(11);}],
+    ["Décliner par prudence","opinion +5 · soutien +3",()=>{E.o(5);E.s(3);}],
+    ["Proposer Sörgel à titre posthume","opinion +9",()=>{E.o(9);}]]},
+
+{id:"novel",t:"Le roman",k:"Opinion",y:[1963,2000],p:2,
+ x:"Un romancier américain imagine un monde où le projet a été mené à bien par une Allemagne victorieuse. Le livre est un succès mondial. Votre institut y figure sous son vrai nom, du mauvais côté.",
+ o:[["Attaquer en diffamation","opinion −11",()=>{E.o(-11);}],
+    ["En rire publiquement","opinion +7",()=>{E.o(7);}],
+    ["Ne pas réagir","",()=>{}]]},
+
+{id:"ecocide",t:"Le mot écocide",k:"Opinion",y:[1998,2100],p:3,
+ x:"Un tribunal international est saisi d'une plainte pour destruction délibérée d'un écosystème. C'est la première fois que le mot est employé devant un juge, et c'est votre nom qui figure à côté.",
+ o:[["Comparaître et plaider l'utilité publique","soutien −7 · opinion +7",()=>{E.s(-7);E.o(7);}],
+    ["Contester la compétence du tribunal","opinion −14",()=>{E.o(-14);}],
+    ["Reconnaître et proposer réparation — 20 Md","opinion +24 · soutien −11",()=>{E.m(-20);E.o(24);E.s(-11);}]]},
+
+{id:"referendum",t:"Référendum",k:"Opinion",y:[1970,2100],p:3,
+ x:"Trois pays riverains organisent le même jour un référendum sur la poursuite du projet. Les instituts de sondage donnent un résultat serré et personne ne croit les instituts de sondage.",
+ o:[["S'y soumettre sans campagne","dépend de l'opinion publique",()=>{ if(S.opinion>52){E.s(16);E.o(6);log("Le oui l'emporte de justesse. Le projet gagne une légitimité qu'il n'avait jamais eue.","good");} else {E.s(-22);E.o(-6);log("Le non l'emporte largement. Trois gouvernements se retirent du consortium.","bad");E.aa(RIV,-12);} }],
+    ["Faire campagne — 8 Md","opinion +9 puis vote",()=>{E.m(-8);E.o(9); if(S.opinion>48){E.s(12);log("Le oui passe. La campagne a coûté cher.","good");} else {E.s(-16);log("Même la campagne n'a pas suffi.","bad");} }],
+    ["Le déclarer sans objet juridique","opinion −18 · riverains −12",()=>{E.o(-18);E.aa(RIV,-12);}]]},
+
+{id:"school",t:"Géographie de demain",k:"Opinion",y:[1930,2100],p:1,rep:40,
+ x:"Les manuels scolaires de six pays décrivent Atlantropa au chapitre « géographie de demain ». Une génération entière grandira en sachant dessiner la nouvelle côte de mémoire.",
+ o:[["Fournir les cartes officielles — 2 Md","opinion +9",()=>{E.m(-2);E.o(9);}],
+    ["Laisser faire","opinion +3",()=>{E.o(3);}]]},
+
+{id:"conf",t:"Conférence du consortium",k:"Diplomatie",y:[1930,2100],p:2,rep:18,
+ x:"Les délégués se réunissent pour l'assemblée générale. L'ordre du jour est mince ; les couloirs ne le sont pas.",
+ o:[["Concessions financières aux membres — 5 Md","toutes nations +9",()=>{E.m(-5);E.aa(Object.keys(nat),9);}],
+    ["Discours sur la grandeur du projet","soutien +7 · opinion +4",()=>{E.s(7);E.o(4);}],
+    ["Exiger davantage de contributions","+6 Md · toutes nations −7",()=>{E.m(6);E.aa(Object.keys(nat),-7);}]]},
+
+{id:"incident",t:"Incident de chantier",k:"Ingénierie",y:[1930,2100],p:2,rep:16,c:()=>Object.values(S.active).some(v=>v),
+ x:"Une grue de trois cents tonnes a versé dans la fouille. Deux morts, six semaines d'arrêt, et un inspecteur du travail qui pose des questions précises.",
+ o:[["Arrêt complet et audit — 3 Md","opinion +8",()=>{E.m(-3);E.o(8);}],
+    ["Reprendre après constat","opinion −5",()=>{E.o(-5);}],
+    ["Reprendre le soir même","+1 Md · opinion −12",()=>{E.m(1);E.o(-12);}]]}
+];
+
+/* --- Brèves d'ambiance (sans choix) --- */
+const AMBIENT=[
+ {t:"Le bulletin de l'Institut tire à quarante mille exemplaires.",y:[1930,1960]},
+ {t:"Une maquette d'Atlantropa au 1/200 000 est exposée au Deutsches Museum.",y:[1930,1955]},
+ {t:"Un train de ciment par heure franchit Algésiras.",c:()=>!S.built.gib&&S.prog.gib>0.2},
+ {t:"On recense soixante-deux mille ouvriers sur le seul chantier de Gibraltar.",c:()=>S.active.gib},
+ {t:"Le premier gigawatt atlantropéen a été livré à Séville.",c:()=>S.power>1&&S.power<12},
+ {t:"Les mouettes ont déserté le port de Gênes.",c:()=>S.levelW<-8},
+ {t:"Un banc de sable émerge au large de Djerba. On le baptise île Sörgel.",c:()=>S.levelW<-18},
+ {t:"La température estivale à Malaga a gagné un degré depuis la fermeture du détroit.",c:()=>S.levelW<-30},
+ {t:"Les vignerons du Roussillon signalent des dépôts blancs sur les feuilles.",c:()=>S.dust>10},
+ {t:"Un troupeau de flamants s'est posé sur les salines nouvelles. Les ornithologues hésitent entre l'émerveillement et l'inquiétude.",c:()=>S.land>5000},
+ {t:"Le prix du fret entre Marseille et Alexandrie a triplé en dix ans.",c:()=>S.deadPorts>2},
+ {t:"Trois villages de pêcheurs kabyles ont été abandonnés cette année.",c:()=>S.salW>40},
+ {t:"Un géographe propose de rebaptiser la Méditerranée « lac d'Atlantropa ». Personne ne suit.",c:()=>S.levelW<-50},
+ {t:"La Bourse de Zurich cote pour la première fois des terrains situés à moins cent mètres.",c:()=>S.land>30000},
+ {t:"Des scouts allemands traversent à pied de la Sicile à la Tunisie.",c:()=>S.built.sic},
+ {t:"Le dernier phare du golfe du Lion a été éteint : il éclairait une plaine.",c:()=>S.levelW<-70},
+ {t:"Un ancien pêcheur de Sète cultive des asperges sur ce qui fut son lieu de pêche. Elles ne poussent pas.",c:()=>S.land>20000},
+ {t:"L'Institut compte désormais plus de juristes que d'ingénieurs.",y:[1955,2100]},
+ {t:"Une compagnie aérienne propose le survol des fonds au départ de Nice.",c:()=>S.land>25000},
+ {t:"Les archives de l'Institut occupent maintenant quatre kilomètres de rayonnages.",y:[1970,2100]},
+ {t:"Un cargo s'est ensablé sur un haut-fond qui ne figurait sur aucune carte.",c:()=>S.levelW<-20&&S.levelW>-60},
+ {t:"La pêche méditerranéenne représente désormais moins d'un pour cent des captures européennes.",c:()=>S.biodiv<45},
+ {t:"Les sels de Camargue ont été déclassés : trop de magnésium.",c:()=>S.salW>40.5},
+ {t:"On a retrouvé un sous-marin allemand de 1943, intact, à quatre-vingts kilomètres de la côte.",y:[1946,2100],c:()=>S.land>15000},
+ {t:"Le mot « atlantropéen » entre au dictionnaire.",y:[1950,2100]},
+ {t:"Un cyclone de poussière saline a traversé la plaine du Pô.",c:()=>S.dust>30},
+ {t:"Les caves de Champagne signalent une hausse anormale des températures d'automne.",c:()=>S.levelW<-95},
+ {t:"Un journaliste calcule que le chantier a consommé plus de béton que toutes les cathédrales d'Europe réunies.",c:()=>S.built.gib},
+ {t:"L'Institut fête son centenaire. Il ne reste plus personne qui ait connu Sörgel.",y:[2028,2035]},
+ {t:"Une carte d'Atlantropa est affichée dans le hall de la gare centrale de Munich. Elle est encore juste.",y:[1930,1945]}
+];
+
+/* --- Moteur --- */
+let curDec=null, speedBefore=1, evCooldown=0;
+function eligible(e){
+  if(e.fy) return false;
+  const f=S.fired[e.id];
+  if(f!==undefined && !(e.rep && S.year-f>=e.rep)) return false;
+  if(e.y && (S.year<e.y[0]||S.year>e.y[1])) return false;
+  if(e.c && !e.c()) return false;
+  return true;
+}
+function tryDecision(){
+  if(S.ended||curDec)return;
+  // 1. événements historiques imposés
+  for(const e of DECISIONS){
+    if(e.fy && S.fired[e.id]===undefined && S.year>=e.fy){ fire(e); return; }
+  }
+  if(evCooldown>0){ evCooldown--; return; }
+  const pool=DECISIONS.filter(eligible);
+  if(!pool.length)return;
+  let tot=0; pool.forEach(e=>tot+=(e.p||1));
+  let r=Math.random()*tot, pick=pool[0];
+  for(const e of pool){ r-=(e.p||1); if(r<=0){pick=e;break;} }
+  fire(pick);
+  evCooldown=1+Math.floor(Math.random()*3);
+}
+function fire(e){
+  S.fired[e.id]=S.year; curDec=e; S.decisions++;
+  speedBefore=S.speed||1; S.speed=0; setSpeedBtn();
+  showModal(`
+    <div class="kicker">${S.year} · ${e.k} · décision n° ${S.decisions}</div>
+    <h2>${e.t}</h2>
+    <p>${e.x}</p>
+    <div style="font-size:11px;color:#8c949e;border-top:1px solid #2c333c;margin-top:14px;padding-top:9px">
+      Trésor ${fmt(S.money,1)} Md · niveau ${fmt(S.levelW,1)} m · soutien ${fmt(S.support,0)} % · opinion ${fmt(S.opinion,0)} % · ${fmt(S.power,0)} GW
+    </div>
+    <div class="choices">${e.o.map((c,i)=>
+      `<button onclick="pickChoice(${i})">${c[0]}${c[1]?`<em>${c[1]}</em>`:''}</button>`).join('')}</div>`);
+}
+window.pickChoice=i=>{
+  const e=curDec; if(!e)return;
+  curDec=null; hideModal();
+  log(`<b style="color:#c9a227;position:static">${e.t}</b> — ${e.o[i][0]}`,'big');
+  e.o[i][2]();
+  if(!S.ended){ S.speed=speedBefore; setSpeedBtn(); }
+  uiDirty=true; refresh();
+};
+function ambient(){
+  const pool=AMBIENT.filter(a=>!S.fired['a_'+a.t] && (!a.y||(S.year>=a.y[0]&&S.year<=a.y[1])) && (!a.c||a.c()));
+  if(!pool.length||Math.random()>0.5)return;
+  const a=pool[Math.floor(Math.random()*pool.length)];
+  S.fired['a_'+a.t]=S.year; log(a.t);
+}
+
+const COND_EVENTS=[
+ {id:"gibdone",c:()=>S.built.gib&&!S.flags.gibdone,fn(){S.flags.gibdone=true;
+   log("LE DÉTROIT EST FERMÉ. À 3 h 40, les dernières vannes se sont closes. La Méditerranée est désormais une baignoire qui fuit par le ciel.","big");S.support+=14;S.opinion+=16;}},
+ {id:"bs1",c:()=>S.built.gib&&!S.built.dard&&S.levelW<-14&&!S.flags.bs1,fn(){S.flags.bs1=true;
+   log("La mer Noire se déverse par le Bosphore et les Dardanelles. Un fleuve de 60 km de large ralentit tout l'abaissement.","bad");}},
+ {id:"sz1",c:()=>S.built.gib&&!S.built.suez&&S.levelW<-22&&!S.flags.sz1,fn(){S.flags.sz1=true;
+   log("Le canal de Suez s'est mué en cataracte : la mer Rouge tombe dans le Sinaï. L'Égypte exige réparation.","bad");nat.EG.att-=18;}},
+ {id:"l25",c:()=>S.levelW<-25&&!S.flags.l25,fn(){S.flags.l25=true;
+   log("Vingt-cinq mètres. Les premiers hauts-fonds sortent de l'eau : bancs de Gabès, lagunes vénitiennes, plateau du Nil.","big");}},
+ {id:"route",c:()=>S.levelW<-60&&!S.flags.route,fn(){S.flags.route=true;
+   log("La route Gibraltar–Suez est coupée : trois seuils la barrent désormais. Le commerce Europe–Asie repart par Le Cap.","bad");S.support-=10;}},
+ {id:"fish",c:()=>S.salW>39.6&&!S.flags.fish,fn(){S.flags.fish=true;
+   log("Les pêcheurs remontent des filets vides. La sardine a disparu du golfe du Lion.","bad");S.opinion-=10;S.biodiv-=8;
+   ["ES","IT","GR","TN","DZ","TR"].forEach(k=>nat[k].att-=8);}},
+ {id:"mass",c:()=>S.salW>41.5&&!S.flags.mass,fn(){S.flags.mass=true;
+   log("MORTALITÉ MASSIVE. Herbiers de posidonie, mérous, cétacés : la mer se vide de sa vie en une décennie. On parle d'une « crise messinienne artificielle ».","big");S.opinion-=22;S.biodiv-=25;}},
+ {id:"dust",c:()=>S.dust>26&&!S.flags.dust,fn(){S.flags.dust=true;
+   log("TEMPÊTES DE SEL. Le vent lève la croûte des fonds émergés. Chlorures et sulfates retombent sur les vergers de Provence et de Campanie — le scénario de la mer d'Aral, à l'échelle d'un continent.","big");
+   S.opinion-=18;S.refugees+=3.5;["FR","IT","ES","GR"].forEach(k=>nat[k].att-=12);}},
+ {id:"quake",c:()=>S.levelW<-70&&Math.random()<0.02&&!S.flags.qk,fn(){S.flags.qk=true;S.quakes++;
+   log("Séisme majeur en mer Tyrrhénienne. Le rebond isostatique — 400 000 milliards de tonnes d'eau ôtées à la croûte — réveille les failles.","bad");S.money-=8;S.opinion-=8;}},
+ {id:"agri",c:()=>S.built.agr&&S.year-(S.flags.agrY||9e9)>12&&!S.flags.agrFail,fn(){S.flags.agrFail=true;
+   log("LE GRENIER EST STÉRILE. Après douze récoltes déclinantes, l'évidence : les fonds méditerranéens sont des dépôts évaporitiques. Le sel remonte par capillarité et tue tout. Sörgel avait supposé de la terre ; il n'y avait que du sel.","big");
+   S.opinion-=16;S.money-=10;}},
+ {id:"port1",c:()=>S.deadPorts>=4&&!S.flags.p4,fn(){S.flags.p4=true;
+   log("Quatre grands ports sont désormais des villes de l'intérieur. Gênes, Marseille, Barcelone : les grues surplombent la poussière.","bad");S.opinion-=12;S.refugees+=2;}},
+ {id:"port2",c:()=>S.deadPorts>=9&&!S.flags.p9,fn(){S.flags.p9=true;
+   log("Neuf ports morts. Le commerce méditerranéen, trois millénaires d'histoire, s'est arrêté en une génération.","big");S.opinion-=18;S.support-=15;}},
+ {id:"venice",c:()=>S.levelW<-40&&!S.built.ven&&!S.flags.ven,fn(){S.flags.ven=true;
+   log("La lagune de Venise s'est asséchée. Les pilotis de mélèze pourrissent à l'air libre ; la ville s'affaisse.","big");S.opinion-=20;nat.IT.att-=25;}},
+ {id:"gulf",c:()=>S.levelW<-120&&!S.flags.gulf,fn(){S.flags.gulf=true;
+   log("La circulation thermohaline se dérègle : sans l'eau salée méditerranéenne qui plonge à Gibraltar, la dérive nord-atlantique faiblit. Les hivers britanniques s'allongent — l'inverse exact de ce qu'avait promis Sörgel.","big");S.opinion-=14;nat.UK.att-=20;}},
+ {id:"rain",c:()=>S.levelW<-90&&!S.flags.rain,fn(){S.flags.rain=true;
+   log("Les pluies manquent. La mer était la chaudière humide de l'Europe du Sud ; réduite d'un cinquième, elle n'alimente plus les dépressions d'automne. Sécheresse d'Andalousie au Liban.","bad");S.opinion-=12;S.refugees+=4;}},
+ {id:"irrev",c:()=>S.levelW<-55&&!S.flags.irrev,fn(){S.flags.irrev=true;
+   log("Note interne de l'Institut : rouvrir Gibraltar provoquerait une réinondation de type zancléen. Nous avons franchi le point de non-retour.","big");}}
+];
+
+/* ---------------------------------------------------------------- TOUR */
+function stepYear(){
+  if(S.ended)return;
+  S.year++;
+  const frozen = S.flags.freeze && S.year<S.flags.freeze;
+
+  let build=0;
+  for(const p of PROJECTS){
+    if(!S.active[p.id]||S.built[p.id])continue;
+    const per=p.cost/p.yrs*S.costMul;
+    if(S.money-build < per){ if(S.year%4===0)log(`Chantier « ${p.n} » au ralenti : les caisses sont vides.`,'bad'); continue; }
+    if(frozen)continue;
+    build+=per; S.prog[p.id]+=1/p.yrs;
+    if(S.prog[p.id]>=0.999){ S.prog[p.id]=1;S.built[p.id]=true;S.active[p.id]=false;
+      log(`Achevé : ${p.n}.`,'good');
+      if(p.id==='agr')S.flags.agrY=S.year;
+      if(p.id==='sic')log("Le bassin oriental est isolé : il peut désormais descendre seul, bien plus bas que l'occidental.",'good');
+    }
+  }
+
+  const m0=measure();
+  /* Taux d'abaissement (m/an), appliqué en continu par la boucle d'animation */
+  if(S.built.gib && !frozen){
+    let r=0.95;
+    if(!S.built.dard && S.levelW>-45) r*=0.66;
+    if(!S.built.suez && S.levelW<-20) r*=0.78;
+    r*=clamp(m0.aW/S.area0,0.55,1.05);
+    S.rBase=r;
+    S.rBaseE=S.built.sic ? 0.95*clamp(m0.aE/S.areaE0,0.5,1.05) : 0;
+  } else { S.rBase=0; S.rBaseE=0; }
+  applyRates();
+  S.levelB = S.built.dard ? 0 : Math.max(S.levelW,-42);
+
+  const m=measure();
+  const H=-Math.min(S.levelW,0);
+  S.power = 0.592*S.turbine*H*(S.built.gib?1:0)*(S.built.dard?1.06:1)*(S.built.sic?1.12:1)*S.powerMul;
+
+  let inc = 3.0 + S.power*(S.flags.oil?0.16:0.115)*(S.built.grd?1.35:1);
+  for(const k in nat) if(nat[k].mem) inc+=nat[k].ct;
+  if(S.built.cit) inc+=2.4;
+  S.agriYield = S.built.agr ? (S.flags.agrFail? Math.max(0,S.agriYield-0.35) : Math.min(3.2,S.agriYield+0.3)) : 0;
+  inc=(inc+S.agriYield)*S.incomeMul;
+  const dette = S.year<S.debtUntil ? S.debtService : 0;
+  const exp = build+0.4+dette+(S.built.gib?1.1:0)+(S.built.sic?0.7:0)+(S.built.cgo?0.9:0)+S.refugees*0.18+S.deadPorts*0.22;
+  S.income=inc; S.spend=exp; S.money+=inc-exp;
+  if(S.money<-12) { endGame('faillite'); return; }
+
+  if(S.built.sic){
+    S.salW=38*S.vol0W/Math.max(m.vW,S.vol0W*0.35);
+    S.salE=38*S.vol0E/Math.max(m.vE,S.vol0E*0.30);
+  } else {
+    S.salW=38*(S.vol0W+S.vol0E)/Math.max(m.vW+m.vE,(S.vol0W+S.vol0E)*0.35);
+    S.salE=S.salW;
+  }
+  const sal=Math.max(S.salW,S.salE);
+  let bT = sal<=38.6?100 : sal<40?lerp(100,62,(sal-38.6)/1.4) : sal<41.5?lerp(62,30,(sal-40)/1.5)
+         : sal<43?lerp(30,9,(sal-41.5)/1.5) : Math.max(1,lerp(9,1,(sal-43)/2));
+  bT*=clamp(m.aW/S.area0,0.4,1);
+  S.biodiv=clamp(S.biodiv+(bT-S.biodiv)*0.16,0,100);
+
+  S.land=m.land; S.saltArea=m.salt;
+  S.dust=clamp(m.salt/9000,0,100)*(S.flags.fixation?0.6:1);
+
+  computeStrand();
+  let dead=0; const lim=S.built.prt?42:16;
+  for(const c of CITIES) if(S.strand[c.n]>lim) dead++;
+  S.deadPorts=dead;
+
+  S.refugees += dead*0.045 + (S.dust>25?0.22:0) + (S.built.cgo&&S.year-(S.flags.cgoY||9e9)<20?0.5:0);
+  if(S.built.cgo&&!S.flags.cgoY)S.flags.cgoY=S.year;
+  S.opinion=clamp(S.opinion+((S.power>25?1.1:0)+(S.built.cit?0.5:0)+(S.money>25?0.3:0)
+             -S.deadPorts*0.28-(100-S.biodiv)*0.035-S.refugees*0.08)*0.55,0,100);
+  S.support=clamp(S.support+((S.power>40?0.9:0)+(S.opinion>60?0.6:-0.5)-(S.flags.deco?0.6:0)-S.deadPorts*0.14)*0.5,0,100);
+
+  for(const c of CITIES){ const n=nat[c.nat]; if(n&&S.strand[c.n]>lim) n.att-=0.18*c.w; }
+  for(const k in nat){ const n=nat[k];
+    n.att=clamp(n.att+(S.support>65?0.35:0)+(S.power>60?0.25:0)-(S.biodiv<40?0.4:0)-(S.dust>25?0.3:0),0,100);
+    if(n.mem&&n.att<22){ n.mem=false; log(`${n.n} quitte le consortium Atlantropa.`,'bad'); }
+  }
+
+  for(const e of COND_EVENTS) if(e.c()) e.fn();
+  if(S.year%10===0) log(`— ${S.year} — niveau ${fmt(S.levelW,1)} m · ${fmt(S.power,0)} GW · ${fmt(S.land,0)} km² émergés · salinité ${fmt(Math.max(S.salW,S.salE),1)} g/L · biodiversité ${fmt(S.biodiv,0)} %`,'big');
+
+  if(S.levelW<=-155) endGame('victory');
+  else if(S.support<8&&S.built.gib) endGame('abandon');
+  else if(S.opinion<6) endGame('revolte');
+  else if(S.year>=2140) endGame('siecle');
+
+  updateExposure();
+  uiDirty=true;
+  if(!S.ended){ ambient(); tryDecision(); }
+}
+let uiDirty=false, baseDirty=true;
+
+/* ------------------------------------------------------------------ FIN */
+function endGame(kind){
+  if(S.ended)return; S.ended=kind; S.speed=0; setSpeedBtn();
+  const P=[
+   ["Énergie promise","« Énergie inépuisable pour l'Europe et l'Afrique »",`${fmt(S.power,0)} GW`],
+   ["Terres promises","« Un grenier de la taille de la France »",`${fmt(S.land,0)} km², dont ${fmt(S.saltArea,0)} km² de croûte saline`],
+   ["Paix promise","« Un chantier pour occuper les armées »",`${fmt(S.refugees,1)} millions de déplacés`],
+   ["Vie marine","Non mentionnée par Sörgel",`${fmt(S.biodiv,0)} % subsistant · ${fmt(Math.max(S.salW,S.salE),1)} g/L`],
+   ["Ports","« De nouveaux ports seront bâtis »",`${S.deadPorts} ports échoués sur ${CITIES.length}`],
+   ["Niveau atteint","−200 m visés",`${fmt(S.levelW,1)} m (ouest) · ${fmt(S.levelE,1)} m (est)`],
+   ["Niveau des océans","Effet non prévu",`−${fmt(Math.abs(S.levelW)*2.3e12/3.6e14,2)} m dans le monde entier`],
+   ["Décisions","Le plan n'en prévoyait aucune",`${S.decisions} dossiers tranchés en ${S.year-1930} ans`]
+  ];
+  const T={
+    faillite:["FAILLITE","L'Institut Atlantropa a cessé ses paiements. Les vannes de Gibraltar restent où vous les avez laissées : une mer à demi vidée n'a pas d'entretien, et personne pour la remplir."],
+    abandon:["LE CONSORTIUM SE DISSOUT","Les nations riveraines se retirent une à une. Le barrage devient un mur sans propriétaire, la mer un problème sans solution."],
+    revolte:["LES PEUPLES DISENT NON","Émeutes du sel de Marseille à Alexandrie. Le Grand Œuvre est arrêté par ceux qu'il devait enrichir."],
+    siecle:["DEUX SIÈCLES PLUS TARD","Le chantier de Sörgel a duré plus longtemps que la plupart des États qui l'ont financé. Voici ce qu'il en reste."],
+    reflood:["LA RÉINONDATION","Vous avez rouvert Gibraltar. Le débit a dépassé mille fois celui de l'Amazone ; une cataracte de plusieurs centaines de mètres a rempli le bassin en deux ans. Les villes bâties sur les fonds ont disparu en une nuit. C'est ainsi que la Méditerranée s'est remplie il y a 5,3 millions d'années — on appelle cela l'inondation zancléenne. Vous venez de la rejouer."],
+    victory:["L'ATLANTROPA EXISTE","Cent cinquante mètres. Le continent que Sörgel avait dessiné à la règle est là, sous vos pieds : une plaine de sel de la taille d'un pays, bordée de ports morts. Vous avez réussi. Reste la question que le plan n'a jamais posée — pour qui ?"]
+  }[kind];
+  showModal(`
+    <div class="kicker">Fin de partie · ${S.year}</div>
+    <h2>${T[0]}</h2><p>${T[1]}</p>
+    <table class="verdict"><tr><th>Poste</th><th>Ce que promettait Sörgel</th><th>Ce que vous obtenez</th></tr>
+    ${P.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table>
+    <p style="font-size:12px;color:#9aa3ad">Herman Sörgel a défendu Atlantropa de 1928 jusqu'à sa mort en 1952, renversé à vélo sur la route de son institut. Le projet n'a jamais reçu le moindre coup de pioche : le nucléaire, la décolonisation et le coût l'ont enterré — pas l'écologie, qui n'existait pas encore comme argument.</p>
+    <div class="choices"><button onclick="location.reload()">Recommencer</button></div>`);
+}
+
+/* ---------------------------------------------------------------- RENDU */
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const off=document.createElement('canvas'); off.width=GW_; off.height=GH_;
+const octx=off.getContext('2d'); const img=octx.createImageData(GW_,GH_);
+let view={z:1,ox:0,oy:0};
+
+function isoBand(d){ // bandes bathymétriques pour le calque géologique
+  if(d<50)return 0; if(d<200)return 1; if(d<500)return 2; if(d<1000)return 3;
+  if(d<2000)return 4; if(d<3000)return 5; return 6;
+}
+const ISO_COL=[[176,214,226],[132,190,213],[96,163,198],[68,133,180],[44,102,155],[27,72,124],[14,45,92]];
+
+function rebuildBase(){
+  const d=img.data;
+  for(let i=0;i<N;i++){
+    const o=i*4, nz=noise[i], sh=shade[i];
+    let r,g,b;
+    if(isLand[i]){
+      const e=elev[i];
+      if(layer==='geo'){ r=58;g=62;b=58; }
+      else if(layer==='eco'){ r=52;g=56;b=54; }
+      else{
+        // teinte hypsométrique
+        const t=clamp(e/2600,0,1);
+        if(t<0.18){ const u=t/0.18; r=lerp(96,124,u); g=lerp(118,133,u); b=lerp(78,84,u); }
+        else if(t<0.5){ const u=(t-0.18)/0.32; r=lerp(124,158,u); g=lerp(133,140,u); b=lerp(84,96,u); }
+        else if(t<0.8){ const u=(t-0.5)/0.3; r=lerp(158,150,u); g=lerp(140,118,u); b=lerp(96,96,u); }
+        else { const u=(t-0.8)/0.2; r=lerp(150,226,u); g=lerp(118,224,u); b=lerp(96,222,u); }
+      }
+      const s=layer==='terrain'?sh:lerp(1,sh,0.55);
+      r*=s; g*=s; b*=s;
+      r*=0.97+0.06*Math.abs(nz); g*=0.97+0.06*Math.abs(nz); b*=0.97+0.06*Math.abs(nz);
+    } else {
+      const bs=basin[i];
+      const lv = bs===1?0 : bs===4?S.levelB : bs===3?S.levelE : S.levelW;
+      const col=depth[i]+lv;
+      if(col>0){
+        if(layer==='geo'){ const c=ISO_COL[isoBand(col)]; r=c[0];g=c[1];b=c[2]; }
+        else if(layer==='sel'){
+          const sal = bs===3?S.salE : bs===2?S.salW : 38;
+          const t=clamp((sal-38)/7,0,1);
+          r=lerp(66,206,t); g=lerp(150,176,t); b=lerp(190,96,t);
+          const t2=clamp(col/2600,0,1); r*=1-0.45*t2; g*=1-0.45*t2; b*=1-0.45*t2;
+        } else {
+          const t=Math.pow(clamp(col/2600,0,1),.62);
+          r=lerp(112,10,t); g=lerp(198,36,t); b=lerp(224,76,t);
+          if(col<40){ r=lerp(r,198,.4); g=lerp(g,228,.4); b=lerp(b,214,.32); }
+        }
+        const s=lerp(1,sh,layer==='geo'?0.12:0.30);
+        r*=s; g*=s; b*=s;
+      } else {
+        const age=expo[i]<0?0:clamp((S.year-expo[i])/22,0,1);
+        const evap=clamp(depth[i]/700,0,1);
+        const sf=clamp(age*(0.45+0.55*evap),0,1);
+        if(layer==='sel'){ r=lerp(120,250,sf); g=lerp(104,246,sf); b=lerp(80,236,sf); }
+        else if(layer==='geo'){ r=lerp(150,214,sf); g=lerp(132,206,sf); b=lerp(104,186,sf); }
+        else { r=lerp(126,224,sf); g=lerp(107,220,sf); b=lerp(76,206,sf); }
+        if(depth[i]+lv>-8){ r=lerp(r,92,.45); g=lerp(g,84,.45); b=lerp(b,66,.45); }
+        r*=sh; g*=sh; b*=sh;
+        r*=0.95+0.10*Math.abs(nz); g*=0.95+0.10*Math.abs(nz); b*=0.95+0.10*Math.abs(nz);
+      }
+    }
+    d[o]=r; d[o+1]=g; d[o+2]=b; d[o+3]=255;
+  }
+  // trait de côte
+  const wet=v=>{ if(isLand[v])return 0; const bs=basin[v];
+    const lv=bs===1?0:bs===4?S.levelB:bs===3?S.levelE:S.levelW; return depth[v]+lv>0?1:0; };
+  for(let y=1;y<GH_-1;y++)for(let x=1;x<GW_-1;x++){
+    const i=y*GW_+x, c=wet(i);
+    if(c!==wet(i+1)||c!==wet(i+GW_)){ const o=i*4; d[o]*=.55; d[o+1]*=.55; d[o+2]*=.60; }
+  }
+  octx.putImageData(img,0,0);
+  baseDirty=false;
+}
+
+let P; // projection courante {dx,dy,sc,k}
+function proj(lo,la){ return [P.dx+lon2x(lo)*P.sc, P.dy+lat2y(la)*P.sc]; }
+function poly(pts,close){ ctx.beginPath();
+  pts.forEach((p,i)=>{ const q=proj(p[0],p[1]); i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]); });
+  if(close)ctx.closePath(); }
+function label(txt,lo,la,size,col,align,dy){
+  const q=proj(lo,la); ctx.textAlign=align||'center';
+  ctx.font=`${size*P.k}px Inter,-apple-system,sans-serif`;
+  ctx.lineWidth=3.2*P.k; ctx.strokeStyle='rgba(6,9,12,.9)';
+  ctx.strokeText(txt,q[0],q[1]+(dy||0)*P.k);
+  ctx.fillStyle=col; ctx.fillText(txt,q[0],q[1]+(dy||0)*P.k);
+}
+
+function paint(){
+  if(baseDirty) rebuildBase();
+  const W=cv.width, H=cv.height, k=devicePixelRatio||1;
+  const sc=Math.min(W/MW,H/MH)*view.z;
+  P={sc,k,dx:(W-MW*sc)/2+view.ox, dy:(H-MH*sc)/2+view.oy};
+  ctx.fillStyle='#05080b'; ctx.fillRect(0,0,W,H);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,P.dx,P.dy,MW*sc,MH*sc);
+  ctx.lineJoin='round'; ctx.lineCap='round';
+
+  /* --- frontières --- */
+  if(showBorders){
+    ctx.setLineDash([5*k,3.5*k]); ctx.lineWidth=1.25*k;
+    ctx.strokeStyle=layer==='eco'?'rgba(240,232,210,.55)':'rgba(232,227,214,.38)';
+    for(const b of BORDERS){ poly(b); ctx.stroke(); }
+    ctx.setLineDash([]);
+  }
+  if(showLabels){
+    for(const c of COUNTRIES) label(c[2],c[0],c[1],c[2].length>9?9.5:10.5,'rgba(228,222,206,.72)');
+  }
+
+  /* --- calque géologique --- */
+  if(layer==='geo'){
+    ctx.setLineDash([]);
+    for(const f of FAULTS){
+      ctx.strokeStyle='rgba(224,110,90,.85)'; ctx.lineWidth=2*k; poly(f.p); ctx.stroke();
+      const mid=f.p[Math.floor(f.p.length/2)];
+      label(f.n,mid[0],mid[1],9.5,'#e0806e','center',-7);
+    }
+    for(const e of EVAPORITES) label(e[2],e[0],e[1],10,'rgba(238,222,168,.9)');
+    for(const g of GEO_NOTES){
+      label(g[2],g[0],g[1],10.5,'rgba(226,236,244,.92)','center',-5);
+      label(g[3],g[0],g[1],9.5,'rgba(160,196,220,.9)','center',7);
+    }
+    for(const v of VOLCANOES){
+      const q=proj(v[0],v[1]);
+      ctx.beginPath(); ctx.moveTo(q[0],q[1]-5*k); ctx.lineTo(q[0]+4.5*k,q[1]+3.5*k); ctx.lineTo(q[0]-4.5*k,q[1]+3.5*k); ctx.closePath();
+      ctx.fillStyle='#d8543c'; ctx.fill(); ctx.strokeStyle='rgba(6,9,12,.9)'; ctx.lineWidth=1.2*k; ctx.stroke();
+      label(v[2],v[0],v[1],9,'#f0b3a2','center',15);
+    }
+    if(S.levelW<-70) label(`Rebond isostatique — ${S.quakes} séisme(s) majeur(s)`,10,41.5,11,'#e0806e');
+  }
+
+  /* --- calque économique --- */
+  if(layer==='eco'){
+    const cut=S.levelW<-60;
+    ctx.setLineDash([9*k,6*k]); ctx.lineWidth=2.2*k;
+    ctx.strokeStyle=cut?'rgba(200,70,55,.85)':'rgba(120,200,235,.75)';
+    poly(SEAROUTE); ctx.stroke(); ctx.setLineDash([]);
+    label(cut?"Route Europe–Asie : COUPÉE":"Route Europe–Asie (Gibraltar–Suez)",17.5,33.6,10.5,cut?'#e08b82':'#8fd0ea');
+    if(S.built.grd||S.built.gib){
+      ctx.strokeStyle='rgba(230,198,90,.5)'; ctx.lineWidth=1.4*k; ctx.setLineDash([3*k,3*k]);
+      for(const c of CITIES.filter(c=>c.w>=3)){ poly([[-5.6,36.0],[c.lo,c.la]]); ctx.stroke(); }
+      ctx.setLineDash([]);
+    }
+    for(const r of RESOURCES){
+      if(r[2]==="Pétrole"&&S.year<1959)continue;
+      const q=proj(r[0],r[1]);
+      ctx.beginPath(); ctx.arc(q[0],q[1],3.2*k,0,7);
+      ctx.fillStyle='#c9a227'; ctx.fill(); ctx.strokeStyle='rgba(6,9,12,.9)';ctx.lineWidth=1.2*k;ctx.stroke();
+      label(r[2],r[0],r[1],9.5,'#e0c98a','center',-7);
+    }
+    if(S.land>2000){
+      label(`Terres gagnées : ${fmt(S.land,0)} km²`,17.5,37.2,12,'#e6c65a');
+      label(`dont ${fmt(S.saltArea,0)} km² de croûte de sel`,17.5,36.4,10,'#c8bfa0');
+    }
+    label(`${S.deadPorts} port(s) échoué(s) · ${fmt(S.power,0)} GW · ${fmt(S.money,1)} Md`,4.5,31.6,11,'#cfd6dd');
+  }
+
+  /* --- calque sel --- */
+  if(layer==='sel'){
+    label(`Bassin occidental — ${fmt(S.salW,1)} g/L`,4.5,39.4,12,'#f0e0c0');
+    label(`Bassin oriental — ${fmt(S.salE,1)} g/L`,25.0,34.2,12,'#f0e0c0');
+    label(`Croûte d'halite et de gypse : ${fmt(S.saltArea,0)} km²`,17.5,31.0,11,'#e0d8c0');
+    if(S.dust>12){
+      ctx.strokeStyle=`rgba(224,208,168,${clamp(S.dust/60,.25,.85)})`; ctx.lineWidth=2.4*k;
+      const plumes=[[[13.0,44.0],[11.0,46.2]],[[11.0,34.5],[13.5,32.0]],[[19.0,36.0],[21.5,38.6]],[[30.0,33.5],[33.0,35.6]],[[4.0,40.0],[3.0,42.6]]];
+      for(const p of plumes){ poly(p); ctx.stroke();
+        const q=proj(p[1][0],p[1][1]); ctx.beginPath(); ctx.arc(q[0],q[1],3*k,0,7); ctx.fillStyle='rgba(230,216,180,.8)'; ctx.fill(); }
+      label(`Tempêtes de sel — indice ${fmt(S.dust,0)}`,8.0,45.6,11,'#e6d8b0');
+    }
+  }
+
+  /* --- barrages --- */
+  for(const id in DAMS){
+    const built=S.built[id], active=S.active[id];
+    if(!built&&!active&&id!=='gib')continue;
+    ctx.strokeStyle=built?'#e6c65a':(active?'rgba(230,198,90,.55)':'rgba(255,255,255,.18)');
+    ctx.lineWidth=(built?4.5:2.5)*k;
+    for(const s of DAMS[id]){ poly(s); ctx.stroke(); }
+  }
+  if(S.built.gib) label("BARRAGE DE GIBRALTAR",-5.6,35.3,11,'#e6c65a');
+  if(S.built.sic) label("DIGUE SICILE–TUNISIE",11.8,36.4,10.5,'#e6c65a');
+  if(S.built.dard) label("BARRAGE DES DARDANELLES",26.3,40.9,10,'#e6c65a');
+
+  /* --- villes --- */
+  const lim=S.built.prt?42:16;
+  for(const c of CITIES){
+    const q=proj(c.lo,c.la);
+    if(q[0]<-80||q[0]>W+80||q[1]<-40||q[1]>H+40)continue;
+    const s=S.strand[c.n]||0, dead=s>lim;
+    const rad=(layer==='eco'?(1.8+c.w*1.3):(c.w>=3?3.1:2.5))*k;
+    ctx.beginPath(); ctx.arc(q[0],q[1],rad,0,7);
+    ctx.fillStyle=dead?'#d0553f':(s>3?'#e0b060':'#f0e9d6'); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.75)'; ctx.lineWidth=1.3*k; ctx.stroke();
+    if(showLabels&&(sc/k>0.6||c.w>=3)){
+      const t=s>1?`${c.n} · ${fmt(s,0)} km`:c.n;
+      ctx.textAlign='left'; ctx.font=`500 ${11*k}px Inter,-apple-system,sans-serif`;
+      ctx.lineWidth=3.2*k; ctx.strokeStyle='rgba(5,8,11,.9)';
+      ctx.strokeText(t,q[0]+rad+3*k,q[1]+3.6*k);
+      ctx.fillStyle=dead?'#e39182':'#e8e3d6'; ctx.fillText(t,q[0]+rad+3*k,q[1]+3.6*k);
+    }
+  }
+}
+
+const LEGENDS={
+ terrain:`<div><i style="background:#2c6f95"></i>Mer · profondeur</div><div><i style="background:#8a7a5c"></i>Fond émergé (vase)</div><div><i style="background:#ded9c6"></i>Croûte de sel</div><div><i style="background:#7c8a56"></i>Terre · relief ombré</div>`,
+ geo:`<div><i style="background:#84bed5"></i>Isobathes 50 / 200 / 500 m…</div><div><i style="background:#0e2d5c"></i>Plaines abyssales</div><div><i style="background:#d8543c"></i>Volcans actifs</div><div><i style="background:#e0806e"></i>Failles et zones de subduction</div><div style="margin-top:4px;color:#8c949e">Les fonds reposent sur 1 à 3 km d'évaporites messiniennes.</div>`,
+ eco:`<div><i style="background:#8fd0ea"></i>Route maritime Europe–Asie</div><div><i style="background:#c9a227"></i>Ressources · réseau électrique</div><div><i style="background:#f0e9d6"></i>Port actif</div><div><i style="background:#d0553f"></i>Port échoué</div>`,
+ sel:`<div><i style="background:#42a0be"></i>38 g/L</div><div><i style="background:#ce9a60"></i>42 g/L</div><div><i style="background:#e0b060"></i>45 g/L et plus</div><div><i style="background:#faf6ec"></i>Croûte d'halite</div>`
+};
+
+function resize(){ const r=cv.parentElement.getBoundingClientRect();
+  cv.width=Math.max(2,Math.floor(r.width*devicePixelRatio));
+  cv.height=Math.max(2,Math.floor(r.height*devicePixelRatio)); paint(); }
+addEventListener('resize',resize);
+cv.addEventListener('wheel',e=>{e.preventDefault();
+  const f=e.deltaY<0?1.12:1/1.12; view.z=clamp(view.z*f,1,8);
+  if(view.z<=1.001){view.z=1;view.ox=0;view.oy=0} paint();},{passive:false});
+let drag=null;
+cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,ox:view.ox,oy:view.oy};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(!drag)return;
+  view.ox=drag.ox+(e.clientX-drag.x)*devicePixelRatio; view.oy=drag.oy+(e.clientY-drag.y)*devicePixelRatio;
+  const bd=baseDirty; baseDirty=false; paint(); baseDirty=bd;});   // pas de recalcul du fond pendant le glisser
+addEventListener('pointerup',()=>drag=null);
+
+/* -------------------------------------------------------------- PANNEAUX */
+function bar(l,v,max,c,sfx){ const p=clamp(v/max*100,0,100);
+  return `<div class="bar"><div class="lab"><span>${l}</span><span>${sfx}</span></div><div class="track"><div class="fill" style="width:${p}%;background:${c}"></div></div></div>`; }
+
+function paneOps(){
+  const nMem=Object.values(nat).filter(n=>n.mem).length;
+  let h=`<div class="sec">Vannes de Gibraltar</div>`;
+  if(S.built.gib){
+    h+=`<p style="font-size:11px;color:#9aa3ad;margin:0 0 4px;line-height:1.5">
+    Turbiner de l'eau, c'est laisser l'Atlantique compenser l'évaporation : la mer cesse de descendre.
+    Mais la puissance vaut <em>débit × hauteur de chute</em> — et la hauteur de chute, c'est justement ce que vous perdez en n'asséchant pas.</p>
+    <input id="slider" type="range" min="0" max="100" value="${Math.round(S.turbine*100)}">
+    <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#9aa3ad">
+      <span>0 % — assèchement</span><span><b style="color:#e6c65a" id="turbVal">${Math.round(S.turbine*100)} %</b></span><span>100 % — niveau stable</span></div>
+    <div style="margin-top:8px;font-size:11.5px">
+      Descente : <b id="turbDrop">${fmt(S.dropW,2)} m/an</b> &nbsp;·&nbsp;
+      Puissance : <b style="color:#e6c65a" id="turbPow">${fmt(S.power,1)} GW</b></div>`;
+  } else h+=`<p style="font-size:11px;color:#9aa3ad">Rien ne commence avant que le détroit ne soit fermé. Il faut l'accord de l'Espagne, du Maroc et du Royaume-Uni.</p>`;
+
+  h+=`<div class="sec">Trésorerie</div><div style="font-size:11.5px;line-height:1.75">
+     Recettes <b style="color:#8fd096;float:right">+${fmt(S.income,1)} Md/an</b><br>
+     Dépenses <b style="color:#e08b82;float:right">−${fmt(S.spend,1)} Md/an</b><br>
+     ${S.year<S.debtUntil?`Service de la dette <b style="color:#e08b82;float:right">−${fmt(S.debtService,1)} Md jusqu'en ${S.debtUntil}</b><br>`:''}
+     Consortium <b style="float:right">${nMem} / ${NATIONS.length} nations</b><br>
+     Décisions prises <b style="float:right">${S.decisions}</b></div>
+   <div class="sec">Chantiers</div>`;
+  for(const p of PROJECTS){
+    const ok=p.req.every(r=>nat[r].mem);
+    const st=S.built[p.id]?`<span class="tag ok">achevé</span>`:S.active[p.id]?`<span class="tag">en cours</span>`
+      :ok?`<span class="tag">disponible</span>`:`<span class="tag no">accord manquant</span>`;
+    const rq=p.req.length?`<div style="font-size:10px;color:#8c949e;margin-top:4px">Requiert : ${p.req.map(r=>`<span style="color:${nat[r].mem?'#8fd096':'#e08b82'}">${nat[r].n}</span>`).join(', ')}</div>`:'';
+    h+=`<div class="card"><div class="row"><h4>${p.n}</h4>${st}</div><p>${p.d}</p>${rq}
+      <div class="row" style="margin-top:7px"><span class="cost">${p.cost} Md · ${p.yrs} ans</span>
+      ${S.built[p.id]?'':`<button ${ok?'':'disabled'} onclick="toggleProj('${p.id}')">${S.active[p.id]?'Suspendre':'Lancer'}</button>`}</div>
+      ${S.prog[p.id]>0?`<div class="prog"><i style="width:${S.prog[p.id]*100}%"></i></div>`:''}</div>`;
+  }
+  if(S.built.gib&&!S.ended){
+    h+=`<div class="sec">Option irréversible</div><div class="card"><h4>Rouvrir le détroit</h4>
+      <p>${S.levelW<-55?"L'Institut estime qu'une réinondation produirait une cataracte de type zancléen.":"Il est encore tôt : la remontée serait lente et sans dégât majeur."}</p>
+      <button onclick="reflood()" style="border-color:#7d3b31;color:#e8a49b">Ouvrir les vannes</button></div>`;
+  }
+  return h;
+}
+function paneEnv(){
+  return `<div class="sec">Bilan de sel</div>
+   ${bar('Salinité (ouest)',S.salW-37,9,'#c9a227',fmt(S.salW,1)+' g/L')}
+   ${S.built.sic?bar('Salinité (bassin est)',S.salE-37,9,'#c98527',fmt(S.salE,1)+' g/L'):''}
+   <p style="font-size:11px;color:#9aa3ad;line-height:1.55">Le sel ne s'évapore pas. Chaque mètre d'eau perdu concentre ce qui reste.
+   Au-delà de 40 g/L la faune méditerranéenne décroche ; à 42 g/L on entre dans le domaine des lagunes hypersalines.
+   Référence : la crise messinienne, il y a 6 millions d'années.</p>
+   <div class="sec">Vivant</div>
+   ${bar('Biodiversité marine',S.biodiv,100,S.biodiv>55?'#5a9e5e':S.biodiv>25?'#c9a227':'#c0392b',fmt(S.biodiv,0)+' %')}
+   ${bar('Charge de poussière saline',S.dust,100,'#b9a97e',fmt(S.dust,0)+' %')}
+   <p style="font-size:11px;color:#9aa3ad;line-height:1.55">Les fonds émergés sèchent en croûte d'halite et de gypse. Le vent la soulève.
+   La mer d'Aral, cent fois plus petite, a suffi à empoisonner l'agriculture de deux républiques.</p>
+   <div class="sec">Terres & climat</div><div style="font-size:11.5px;line-height:1.85">
+     Fonds émergés <b style="float:right">${fmt(S.land,0)} km²</b><br>
+     Dont croûte saline <b style="float:right;color:#b9a97e">${fmt(S.saltArea,0)} km²</b><br>
+     Rendement agricole <b style="float:right;color:${S.flags.agrFail?'#e08b82':'#8fd096'}">${fmt(S.agriYield,1)} Md/an</b><br>
+     Baisse du niveau des océans <b style="float:right">${fmt(Math.abs(S.levelW)*2.3e12/3.6e14,2)} m</b><br>
+     Séismes majeurs <b style="float:right">${S.quakes}</b></div>
+   <p style="font-size:11px;color:#9aa3ad;line-height:1.55">Retirer l'eau de la Méditerranée abaisse réellement le niveau global des océans — l'unique effet
+   que les projets modernes de barrage à Gibraltar retiennent encore.</p>`;
+}
+function paneGeo(){
+  let h=`<div class="sec">Opinion & légitimité</div>
+   ${bar('Soutien des gouvernements',S.support,100,'#4a8fb8',fmt(S.support,0)+' %')}
+   ${bar('Opinion publique',S.opinion,100,'#8a6fb8',fmt(S.opinion,0)+' %')}
+   ${bar('Déplacés',S.refugees,40,'#c0392b',fmt(S.refugees,1)+' M')}
+   <div class="sec">Consortium</div>`;
+  for(const k in nat){ const n=nat[k];
+    const col=n.att>60?'#5a9e5e':n.att>35?'#c9a227':'#c0392b';
+    h+=`<div class="card" style="padding:7px 9px"><div class="row">
+      <div><h4 style="margin:0">${n.n}</h4><div class="track" style="width:118px;margin-top:5px"><div class="fill" style="width:${n.att}%;background:${col}"></div></div></div>
+      <div style="text-align:right">${n.mem?'<span class="tag ok">membre</span>':`<button onclick="negotiate('${k}')" ${S.money<2?'disabled':''}>Négocier · 2 Md</button>`}
+      <div style="font-size:10px;color:#8c949e;margin-top:4px">contribution ${n.ct} Md/an</div></div></div></div>`;
+  }
+  h+=`<div class="sec">Ports</div><div style="font-size:11.5px;line-height:1.8">`;
+  const lim=S.built.prt?42:16;
+  for(const c of CITIES.slice().sort((a,b)=>(S.strand[b.n]||0)-(S.strand[a.n]||0))){
+    const s=S.strand[c.n]||0;
+    h+=`<div style="display:flex;justify-content:space-between;color:${s>lim?'#e08b82':'#c3cbd4'}"><span>${c.n}</span><span>${s<1?'à quai':fmt(s,0)+' km de la mer'}</span></div>`;
+  }
+  return h+'</div>';
+}
+function paneDoc(){
+  return `<div class="sec">Le projet réel</div>
+  <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4"><b>Atlantropa</b> (ou <i>Panropa</i>) est le projet de l'architecte munichois
+  <b>Herman Sörgel</b> (1885-1952), défendu de 1928 à sa mort. Un barrage hydroélectrique de 35 km au détroit de Gibraltar devait abaisser la
+  Méditerranée <b>jusqu'à 200 mètres</b>, en produisant environ <b>50 000 MW</b> et en découvrant des centaines de milliers de km² de terres.
+  Quatre autres ouvrages étaient prévus : les <b>Dardanelles</b> (retenir la mer Noire), une digue <b>Sicile–Tunisie</b>, un barrage sur le
+  <b>Congo</b> pour créer des mers intérieures africaines et irriguer le Sahara, et des <b>écluses à Suez</b>.</p>
+  <div class="sec">Ce que Sörgel voulait</div>
+  <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4">Un chantier séculaire contre le chômage, l'énergie sans fin, des terres contre la
+  surpopulation — et la fusion de l'Europe et de l'Afrique en un bloc capable de tenir tête à l'Amérique et à une « Pan-Asie ». Le projet était
+  <b>pacifiste</b> et <b>pan-européen</b> dans son intention, et franchement <b>colonial</b> dans sa structure : l'Afrique y est un espace vide
+  à peupler d'Européens, et aucun pays riverain du sud n'a été consulté. En 1938, Sörgel place une citation de Hitler en exergue d'un de ses
+  livres pour se rendre acceptable ; en 1942 le régime lui interdit toute propagande.</p>
+  <div class="sec">Ce qui serait arrivé</div>
+  <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4">
+  • <b>Hypersalinité</b> : le sel reste, l'eau part. De 38 à 43-45 g/L — une crise messinienne artificielle, létale pour l'essentiel de la faune.<br>
+  • <b>Croûtes de sel</b> : les fonds découverts sont des dépôts évaporitiques, pas de la terre arable. Le « grenier » aurait été un désert salé,
+  avec des tempêtes de poussière saline de type mer d'Aral.<br>
+  • <b>Ports morts</b> : Venise, Gênes, Marseille, Alexandrie, Le Pirée à des dizaines puis des centaines de kilomètres du rivage.<br>
+  • <b>Climat</b> : moins d'évaporation, donc moins de pluies méditerranéennes ; et l'arrêt de la veine d'eau salée qui plonge à Gibraltar
+  perturbe la circulation atlantique — l'inverse du bienfait annoncé.<br>
+  • <b>Géologie</b> : ôter des centaines de milliers de milliards de tonnes d'eau provoque un rebond de la croûte et une sismicité accrue.</p>
+  <div class="sec">Ce qui l'a tué</div>
+  <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4">Ni l'écologie ni la morale : le <b>nucléaire civil</b> (1954) a rendu l'argument
+  énergétique caduc, la <b>décolonisation</b> a détruit la prémisse eurafricaine, et le coût était sans commune mesure avec la reconstruction
+  d'après-guerre. L'Institut Atlantropa a fermé en 1960.</p>
+  <div class="sec">Lecture de la carte</div>
+  <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4">Le relief est ombré : en s'asséchant, le fond révèle ses talus, ses canyons et ses
+  plaines abyssales. Les frontières sont celles de 1930 (Yougoslavie, Transjordanie, Palestine mandataire, Libye italienne). Les calques
+  <b>Géologie</b>, <b>Économie</b> et <b>Sel</b> superposent bathymétrie, volcanisme, routes maritimes, ressources et salinité.</p>
+  <div class="sec">Sources</div>
+  <p style="font-size:10.5px;line-height:1.6;color:#8c949e">Wikipédia « Atlantropa » · W. Voigt, <i>Atlantropa — Weltenbauen am Mittelmeer</i> (1998) ·
+  A. Gall, <i>Das Atlantropa-Projekt</i> (1998) · Atlas Obscura · Cabinet Magazine n°10 · Environment &amp; Society Portal.<br><br>
+  La simulation est calibrée sur des ordres de grandeur réels (déficit évaporatoire net ≈ 0,95 m/an, P = ρgQHη, bilan de sel à masse constante).
+  Le trait de côte et la bathymétrie sont schématiques : c'est un jeu, pas un SIG.</p>`;
+}
+
+let sliderBusy=false;
+function refresh(){
+  document.getElementById('sYear').textContent=S.year;
+  document.getElementById('sMoney').textContent=fmt(S.money,1);
+  document.getElementById('sPower').textContent=fmt(S.power,0);
+  document.getElementById('sLand').textContent=fmt(S.land,0);
+  document.getElementById('sSal').textContent=fmt(Math.max(S.salW,S.salE),1);
+  document.getElementById('sRef').textContent=fmt(S.refugees,1);
+  document.getElementById('sLevel').textContent=fmt(S.levelW,1)+' m';
+  document.getElementById('legend').innerHTML=LEGENDS[layer];
+  const act=document.querySelector('#tabs button.on').dataset.tab;
+  if(!(act==='ops'&&sliderBusy)){
+    const el=document.getElementById('pane-'+act), sc=el.scrollTop;
+    el.innerHTML = act==='ops'?paneOps():act==='env'?paneEnv():act==='geo'?paneGeo():paneDoc();
+    el.scrollTop=sc;
+    const sl=document.getElementById('slider');
+    if(sl){
+      sl.addEventListener('pointerdown',()=>sliderBusy=true);
+      sl.addEventListener('input',e=>{
+        S.turbine=+e.target.value/100;
+        applyRates();
+        const H=-Math.min(S.levelW,0);
+        const p=0.592*S.turbine*H*(S.built.gib?1:0)*(S.built.dard?1.06:1)*(S.built.sic?1.12:1);
+        document.getElementById('turbVal').textContent=Math.round(S.turbine*100)+' %';
+        document.getElementById('turbDrop').textContent=fmt(S.dropW,2)+' m/an';
+        document.getElementById('turbPow').textContent=fmt(p,1)+' GW';
+      });
+    }
+  }
+  paint();
+}
+addEventListener('pointerup',()=>{ if(sliderBusy){sliderBusy=false;refresh();} });
+
+window.toggleProj=id=>{ S.active[id]=!S.active[id];
+  if(S.active[id])log(`Chantier ouvert : ${PROJECTS.find(p=>p.id===id).n}.`); refresh(); };
+window.negotiate=k=>{ if(S.money<2)return; S.money-=2; const n=nat[k];
+  n.att=clamp(n.att+12+Math.random()*14-(S.flags.deco&&["MA","TN","DZ","LY","EG","CG"].includes(k)?6:0),0,100);
+  if(n.att>=58&&!n.mem){n.mem=true;log(`${n.n} rejoint le consortium Atlantropa.`,'good');}
+  else if(!n.mem)log(`Pourparlers avec ${n.n} : progrès, sans signature.`);
+  refresh(); };
+window.reflood=()=>{
+  if(S.levelW>-8){ S.levelW=0;S.levelE=0;S.built.gib=false;S.prog.gib=0;baseDirty=true;
+    log("Les vannes sont rouvertes. La mer reprend sa place sans dommage — et le projet meurt dans l'indifférence.",'big');
+    endGame('abandon'); return; }
+  endGame('reflood');
+};
+function showModal(html){ document.getElementById('ovm').innerHTML=html; document.getElementById('ov').style.display='flex'; }
+function hideModal(){ document.getElementById('ov').style.display='none'; }
+window.hideModal=hideModal;
+window.startGame=()=>{ hideModal(); S.speed=1; setSpeedBtn(); };
+
+/* --------------------------------------------------------------- BOUCLE */
+const SPEEDS=[0,0.035,0.10,0.30];            // années par seconde
+const RATE=["en pause","1 an ≈ 29 s","1 an ≈ 10 s","1 an ≈ 3,3 s"];
+let last=performance.now(), lastUI=0, lastMap=0;
+function setSpeedBtn(){
+  document.querySelectorAll('#speed button').forEach(b=>b.classList.toggle('on',+b.dataset.sp===S.speed));
+  document.getElementById('rate').textContent=RATE[S.speed];
+}
+function loop(t){
+  const dt=Math.min(0.12,(t-last)/1000); last=t;
+  if(S.speed>0&&!S.ended){
+    const yrs=dt*SPEEDS[S.speed];
+    // le niveau descend en continu, pas par sauts annuels
+    if(S.built.gib&&!(S.flags.freeze&&S.year<S.flags.freeze)){
+      const before=S.levelW;
+      S.levelW=Math.max(-230,S.levelW-S.dropW*yrs);
+      if(S.built.sic) S.levelE=Math.max(-300,S.levelE-S.dropE*yrs);
+      else S.levelE=S.levelW;
+      if(!S.built.dard) S.levelB=Math.max(S.levelW,-42);
+      if(before!==S.levelW) baseDirty=true;
+    }
+    S.frac+=yrs;
+    while(S.frac>=1){ S.frac-=1; stepYear(); if(S.ended||curDec)break; }
+  }
+  if(baseDirty && t-lastMap>300){ lastMap=t; paint(); }
+  if(uiDirty && t-lastUI>200){ uiDirty=false; lastUI=t; refresh(); }
+  requestAnimationFrame(loop);
+}
+document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>{S.speed=+b.dataset.sp;setSpeedBtn();});
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); document.getElementById('pane-'+b.dataset.tab).classList.add('on'); refresh();});
+document.querySelectorAll('#layers button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#layers button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); layer=b.dataset.l; baseDirty=true;
+  document.getElementById('legend').innerHTML=LEGENDS[layer]; paint();});
+document.getElementById('optBorders').onchange=e=>{showBorders=e.target.checked;paint();};
+document.getElementById('optLabels').onchange=e=>{showLabels=e.target.checked;paint();};
+addEventListener('keydown',e=>{ if(e.code==='Space'){e.preventDefault();S.speed=S.speed?0:1;setSpeedBtn();} });
+
+/* ------------------------------------------------------------------ BOOT */
+const bm=document.getElementById('bootmsg');
+setTimeout(()=>{ bm.textContent="rasterisation des côtes…"; setTimeout(()=>{
+  buildGrid();
+  bm.textContent="mesure des volumes…";
+  setTimeout(()=>{
+    const m0=measure(); S.vol0W=m0.vW; S.vol0E=m0.vE; S.area0=m0.aW; S.areaE0=m0.aE;
+    computeStrand(true); updateExposure();
+    document.getElementById('boot').remove();
+    resize(); refresh(); drawLog(); setSpeedBtn();
+    log("Munich. L'Institut Atlantropa ouvre ses portes. Herman Sörgel a un plan pour l'Europe : lui donner un continent.",'big');
+    showModal(`
+      <div class="kicker">1930 · Institut Atlantropa, Munich</div>
+      <h2>Le Grand Œuvre</h2>
+      <p>Vous dirigez l'institut de Herman Sörgel. Le plan est simple et démesuré : barrer le détroit de Gibraltar,
+      abaisser la Méditerranée de <b>200 mètres</b>, en tirer une énergie sans fin et un continent neuf, et souder l'Europe à l'Afrique.</p>
+      <p><b>Le nœud du jeu.</b> La puissance d'une turbine vaut <i>débit × hauteur de chute</i>. La hauteur de chute, c'est le vide que vous
+      creusez. Pour produire, il faut assécher ; pour assécher, il faut renoncer à produire. Et le sel, lui, ne s'évapore jamais.</p>
+      <p><b>Le temps est long — deux siècles.</b> Il s'écoule lentement et s'arrête de lui-même à chaque décision : soixante-dix dossiers
+      vous seront soumis, diplomatiques, techniques, financiers, sanitaires, archéologiques. C'est là que se joue la partie, pas dans le
+      défilement des années.</p>
+      <p style="color:#9aa3ad;font-size:12px">Molette pour zoomer, glisser pour déplacer. <b>Espace</b> met en pause.
+      Les calques <b>Géologie</b>, <b>Économie</b> et <b>Sel</b> changent la lecture de la carte.
+      L'onglet <b>Dossier</b> contient la documentation historique.</p>
+      <div class="choices">
+        <button onclick="startGame()">Ouvrir le chantier du siècle</button>
+        <button onclick="hideModal()">Regarder la carte d'abord</button>
+      </div>`);
+    requestAnimationFrame(loop);
+  },30);
+},30);},40);
+</script>
+</body>
+</html>
