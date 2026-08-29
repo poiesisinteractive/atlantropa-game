@@ -1,0 +1,150 @@
+/* Vérifie que les commandes du relief sont réellement atteignables et
+   réellement effectives.
+
+   Le test de fumée appelait `set3d()` et `R3.setTilt()` directement : il ne
+   pouvait donc pas voir que le canvas WebGL, ajouté en dernier dans #mapwrap,
+   se peignait par-dessus les surcouches et interceptait tous leurs clics. On
+   passe donc ici par l'interface, et on compare les pixels rendus.
+
+   Usage : node tools/ui3d-check.mjs [url] */
+import { chromium } from 'playwright-core';
+
+const url = process.argv[2] || 'http://localhost:4188/';
+const browser = await chromium.launch({
+  args: ['--use-gl=angle', '--use-angle=default', '--enable-unsafe-swiftshader',
+         '--ignore-gpu-blocklist'],
+});
+const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
+const errors = [];
+page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+
+await page.goto(url, { waitUntil: 'load' });
+await page.waitForFunction(() => !document.getElementById('boot'), null, { timeout: 25000 });
+await page.evaluate(() => {
+  window.hideModal();
+  const g = window.__atl;
+  g.S.built.gib = true; g.S.prog.gib = 1;
+  g.S.levelW = -120; g.S.levelE = -120; g.dirty.base = true;
+});
+
+/* --- 0. avant tout clic, rien de la 3D ne doit être manipulable ---
+   C'est le bug d'origine : `hidden` sur un élément à qui la feuille de style
+   donne display:flex ne masque rien, et le panneau était atteignable dès le
+   chargement, alors qu'aucune scène n'existait. */
+const avant = await page.evaluate(() => {
+  const p = document.getElementById('view3d');
+  return { affiche: getComputedStyle(p).display !== 'none', canvas3d: !!document.getElementById('cv3') };
+});
+console.log(`  avant le clic : panneau ${avant.affiche ? 'VISIBLE (fautif)' : 'masqué'}` +
+            ` · canvas 3D ${avant.canvas3d ? 'PRÉSENT (fautif)' : 'absent'}`);
+
+await page.click('#btn3d');
+await page.waitForTimeout(1000);
+
+/* --- 1. les surcouches sont-elles visibles, et cliquables quand elles doivent
+       l'être ? Deux questions distinctes : positionnés sans z-index, les frères
+       se peignent dans l'ordre du DOM — être visible, c'est venir après le
+       canvas. Être cliquable, c'est en plus ne pas avoir pointer-events:none,
+       que la légende porte volontairement. --- */
+const hits = await page.evaluate(() => {
+  const wrap = document.getElementById('mapwrap');
+  const ordre = [...wrap.children];
+  const iCanvas = ordre.indexOf(document.getElementById('cv3'));
+  return ['#layers', '#view3d', '#seaBadge', '#legend', '#zoomhint'].map((sel) => {
+    const el = document.querySelector(sel);
+    if (!el || el.hidden) return { sel, etat: 'masqué' };
+    const visible = ordre.indexOf(el) > iCanvas;
+    const inerte = getComputedStyle(el).pointerEvents === 'none';
+    const r = el.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return {
+      sel, visible, inerte,
+      cliquable: inerte ? null : !!(top && (top === el || el.contains(top))),
+      dessus: top ? (top.id || top.tagName) : 'rien',
+    };
+  });
+});
+
+const bad = hits.filter((h) => h.etat !== 'masqué' && (!h.visible || h.cliquable === false));
+for (const h of hits) {
+  if (h.etat) { console.log(`  ${h.sel.padEnd(11)} ${h.etat}`); continue; }
+  const quoi = !h.visible ? `RECOUVERT par le canvas`
+    : h.inerte ? 'visible · décoratif (pointer-events:none)'
+    : h.cliquable ? 'visible · cliquable'
+    : `visible mais NON CLIQUABLE, ${h.dessus} intercepte`;
+  console.log(`  ${h.sel.padEnd(11)} ${quoi}`);
+}
+
+/* --- 2. les curseurs changent-ils l'image ? --- */
+const map = { x: 0, y: 46, width: 1160, height: 680 };
+const shot = () => page.screenshot({ clip: map });
+const diff = (a, b) => {
+  let n = 0;
+  const L = Math.min(a.length, b.length);
+  for (let i = 0; i < L; i++) if (a[i] !== b[i]) n++;
+  return (n / L * 100).toFixed(1) + ' % d\'octets différents';
+};
+
+const setSlider = async (sel, value) => {
+  // Un vrai geste : on clique sur la piste au bon endroit, puis on complète
+  // au clavier. `el.value = x` ne déclencherait pas les mêmes évènements.
+  const el = page.locator(sel);
+  await el.click();
+  await el.fill(String(value));           // input[type=range] accepte fill()
+  await el.dispatchEvent('input');
+  await page.waitForTimeout(400);
+};
+
+const base = await shot();
+await setSlider('#ctlRelief', 70);
+const apresRelief = await shot();
+await setSlider('#ctlRelief', 28);
+await setSlider('#ctlTilt', 50);
+const apresTilt = await shot();
+await setSlider('#ctlTilt', 0);
+await setSlider('#ctlAbyss', 95);
+const apresAbyss = await shot();
+
+console.log('\n  Relief 28 -> 70   :', diff(base, apresRelief));
+console.log('  Inclinaison 0 -> 50:', diff(base, apresTilt));
+console.log('  Abysses 0,45 -> 0,95:', diff(base, apresAbyss));
+
+const val = await page.evaluate(() => ({
+  tilt: document.getElementById('valTilt').textContent,
+  relief: document.getElementById('valRelief').textContent,
+  abyss: document.getElementById('valAbyss').textContent,
+}));
+console.log('  étiquettes :', JSON.stringify(val));
+
+/* --- 3. le retour en 2D range bien la 3D --- */
+await page.click('#btn3d');
+await page.waitForTimeout(500);
+const retour = await page.evaluate(() => {
+  const vis = (id) => getComputedStyle(document.getElementById(id)).display !== 'none';
+  return {
+    panneau: vis('view3d'), canvas3d: vis('cv3'), canvas2d: vis('cv'),
+    options: vis('mapopt'),
+    bouton3d: document.getElementById('btn3d').classList.contains('on'),
+    boutonCalque: document.querySelector('#layers button[data-l="terrain"]').classList.contains('on'),
+  };
+});
+console.log('\n  retour en 2D :', JSON.stringify(retour));
+const retourKo = retour.panneau || retour.canvas3d || !retour.canvas2d
+              || !retour.options || retour.bouton3d;
+
+await browser.close();
+
+const inerte = [['Relief', base, apresRelief], ['Inclinaison', base, apresTilt],
+                ['Abysses', base, apresAbyss]]
+  .filter(([, a, b]) => a.equals(b)).map(([n]) => n);
+
+if (errors.length) { console.error('\nERREURS :'); errors.forEach((e) => console.error('  ' + e)); }
+if (avant.affiche || avant.canvas3d) console.error('\nLA 3D EST EXPOSÉE AVANT D\'ÊTRE INITIALISÉE');
+if (bad.length) console.error(`\nRECOUVERTS : ${bad.map((h) => h.sel).join(', ')}`);
+if (inerte.length) console.error(`\nSANS EFFET : ${inerte.join(', ')}`);
+if (retourKo) console.error('\nLE RETOUR EN 2D NE RANGE PAS LA 3D');
+if (errors.length || avant.affiche || avant.canvas3d || bad.length || inerte.length || retourKo)
+  process.exit(1);
+console.log('\nOK — la 3D reste rangée tant qu\'on ne la demande pas, ' +
+            'ses commandes sont atteignables et effectives, et le retour en 2D est propre.');

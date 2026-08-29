@@ -135,8 +135,14 @@ npm run lint
 node tools/fetch-dem.mjs     # recuire le relief depuis les Terrain Tiles
 node tools/smoke.mjs         # non-régression : boot, 40 ans, calques, onglets
 node tools/hypso-check.mjs   # la table hypsométrique contre le balayage complet
+node tools/ui3d-check.mjs    # les commandes du relief, par l'interface réelle
 node tools/shot3d.mjs        # captures du relief
 ```
+
+`ui3d-check` passe délibérément par des clics et des glissers plutôt que par
+`window.__atl` : c'est ce qui manquait au test de fumée, qui appelait les
+fonctions directement et ne pouvait donc pas voir qu'un canvas mal placé dans
+l'ordre du DOM recouvrait les commandes et interceptait leurs clics.
 
 Les deux derniers outils pilotent Chromium via `playwright-core`, en réutilisant les
 navigateurs déjà installés sur la machine.

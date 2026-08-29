@@ -4,6 +4,11 @@
     --red:#c0392b; --green:#5a9e5e; --blue:#4a8fb8;
   }
   *{box-sizing:border-box}
+  /* Le display:none que le navigateur attache à [hidden] a la spécificité la
+     plus faible : le moindre `display:flex` d'un sélecteur d'auteur le bat, et
+     l'élément reste à l'écran. C'est ce qui laissait le panneau du relief
+     visible et manipulable alors qu'aucune scène 3D n'existait encore. */
+  [hidden]{display:none!important}
   html,body{margin:0;padding:0;height:100%}
   body{background:var(--bg);color:var(--ink);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;overflow:hidden}
   #app{display:flex;flex-direction:column;height:100vh}
@@ -70,9 +75,11 @@
   #layers button{padding:4px 9px;font-size:11px}
   #mapopt{position:absolute;left:10px;top:48px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:6px 9px;font-size:11px;color:var(--dim);display:flex;gap:12px}
   #mapopt label{display:flex;align-items:center;gap:5px;cursor:pointer}
-  /* Les deux rendus se superposent dans #mapwrap ; un seul est visible. */
+  /* Les deux rendus se superposent dans #mapwrap ; un seul est visible.
+     L'ordre dans le DOM fait l'ordre de peinture : le canvas 3D doit donc
+     s'insérer juste après le canvas 2D, avant les surcouches. */
   #mapwrap canvas{position:absolute;inset:0;width:100%;height:100%}
-  #view3d{position:absolute;left:10px;top:82px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:8px 10px;font-size:10.5px;color:var(--dim);display:flex;flex-direction:column;gap:6px;width:210px}
+  #view3d{position:absolute;left:10px;top:48px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:8px 10px;font-size:10.5px;color:var(--dim);display:flex;flex-direction:column;gap:6px;width:210px}
   #view3d label{display:grid;grid-template-columns:58px 1fr 34px;align-items:center;gap:7px}
   #view3d input[type=range]{width:100%;height:3px}
   #view3d b{color:var(--gold2);font-variant-numeric:tabular-nums;text-align:right;font-weight:500}

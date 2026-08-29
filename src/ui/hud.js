@@ -41,7 +41,9 @@ function refresh(){
       });
     }
   }
-  paint();
+  // En relief, la boucle rend déjà la scène à chaque image : reconstruire en
+  // plus le fond 2D coûterait quarante millisecondes pour un canvas masqué.
+  if(!opts.mode3d) paint();
 }
 addEventListener('pointerup',()=>{ if(sliderBusy){sliderBusy=false;refresh();} });
 export { SPEEDS, RATE, setSpeedBtn, refresh };

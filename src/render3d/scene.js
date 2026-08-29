@@ -20,7 +20,11 @@ export function init(container) {
   host = container;
   const canvas = document.createElement('canvas');
   canvas.id = 'cv3';
-  container.appendChild(canvas);
+  /* Juste après le canvas 2D, et surtout AVANT les surcouches : positionnés
+     sans z-index, les frères se peignent dans l'ordre du DOM. Ajouté en
+     dernier, le canvas recouvrirait les calques, la légende et les réglages —
+     et intercepterait leurs clics, qui partiraient dans OrbitControls. */
+  container.insertBefore(canvas, container.firstElementChild.nextSibling);
 
   renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));

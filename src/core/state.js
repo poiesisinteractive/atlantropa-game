@@ -15,7 +15,9 @@ const S={
 };
 PROJECTS.forEach(p=>{S.prog[p.id]=0;S.built[p.id]=false;S.active[p.id]=false;});
 const nat={}; NATIONS.forEach(n=>nat[n.id]={...n});
-/* Options d'affichage : mutables et lues par le rendu. */
-export const opts = { layer: 'terrain', showBorders: true, showLabels: true };
+/* Options d'affichage : mutables et lues par le rendu. `mode3d` dit lequel
+   des deux rendus est à l'écran — l'IHM s'en sert pour ne pas reconstruire
+   inutilement la carte 2D, qui coûte quarante millisecondes. */
+export const opts = { layer: 'terrain', showBorders: true, showLabels: true, mode3d: false };
 
 export { S, nat };

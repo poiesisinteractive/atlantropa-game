@@ -20,8 +20,10 @@ import * as R3 from './render3d/scene.js';
 import './ui/actions.js';
 
 /* Deux rendus cohabitent le temps du portage : l'ancien Canvas 2D, qui reste
-   la référence visuelle, et le relief three.js. */
-let mode3d = false, inited3d = false;
+   la référence visuelle, et le relief three.js. Le mode vit dans `opts` et
+   non dans une variable locale : l'IHM doit savoir s'il faut redessiner la
+   carte 2D, qui coûte 40 ms, ou laisser la boucle rendre la scène. */
+let inited3d = false;
 
 let last = performance.now(), lastUI = 0, lastMap = 0;
 
@@ -46,7 +48,7 @@ function loop(t){
     S.frac+=yrs;
     while(S.frac>=1){ S.frac-=1; stepYear(); if(S.ended||dec.cur)break; }
   }
-  if(mode3d) R3.frame();
+  if(opts.mode3d) R3.frame();
   // Le rendu 2D reconstruit 772 200 pixels sur le fil principal : il ne peut
   // pas suivre le niveau image par image, d'où ce bridage. Le rendu 3D n'en
   // a pas besoin, le niveau n'y est qu'un uniform.
@@ -59,12 +61,15 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
   b.classList.add('on'); document.getElementById('pane-'+b.dataset.tab).classList.add('on'); refresh();});
-document.querySelectorAll('#layers button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('#layers button').forEach(x=>x.classList.remove('on'));
+/* `[data-l]` et non `#layers button` : le bouton 3D partage la barre des
+   calques sans en être un, et perdrait son état actif à chaque changement. */
+document.querySelectorAll('#layers button[data-l]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#layers button[data-l]').forEach(x=>x.classList.remove('on'));
   b.classList.add('on'); opts.layer=b.dataset.l; dirty.base=true;
-  document.getElementById('legend').innerHTML=LEGENDS[opts.layer]; paint();});
-document.getElementById('optBorders').onchange=e=>{opts.showBorders=e.target.checked;paint();};
-document.getElementById('optLabels').onchange=e=>{opts.showLabels=e.target.checked;paint();};
+  document.getElementById('legend').innerHTML=LEGENDS[opts.layer];
+  if(!opts.mode3d) paint();});   // en 3D, frame() relit opts.layer à chaque image
+document.getElementById('optBorders').onchange=e=>{opts.showBorders=e.target.checked;if(!opts.mode3d)paint();};
+document.getElementById('optLabels').onchange=e=>{opts.showLabels=e.target.checked;if(!opts.mode3d)paint();};
 addEventListener('keydown',e=>{ if(e.code==='Space'){e.preventDefault();S.speed=S.speed?0:1;setSpeedBtn();} });
 
 /* ------------------------------------------------------------- RELIEF 3D */
@@ -72,19 +77,27 @@ const panel3d = document.getElementById('view3d');
 const btn3d = document.getElementById('btn3d');
 
 function setMode3d(on){
-  mode3d = on;
+  opts.mode3d = on;
   if(on && !inited3d){
     inited3d = true;
-    document.getElementById('mapwrap').style.cursor='grab';
     R3.init(document.getElementById('mapwrap'));
   }
   btn3d.classList.toggle('on', on);
   panel3d.hidden = !on;
   cv.hidden = on;
   const c3 = R3.domElement(); if(c3) c3.hidden = !on;
+
+  /* Frontières et toponymes n'existent que dans le rendu 2D : plutôt que
+     d'offrir deux cases qui ne feraient rien, on les retire tant que les
+     surcouches ne sont pas portées. */
+  document.getElementById('mapopt').hidden = on;
+  document.getElementById('zoomhint').textContent = on
+    ? 'molette : zoom · glisser : pivoter · clic droit : déplacer'
+    : 'molette : zoom · glisser : déplacer';
+
   if(on){ R3.resize(); syncTilt(); } else { dirty.base=true; paint(); }
 }
-btn3d.onclick = ()=>setMode3d(!mode3d);
+btn3d.onclick = ()=>setMode3d(!opts.mode3d);
 
 function syncTilt(){
   const d = Math.round(R3.getTilt());
@@ -105,7 +118,7 @@ document.getElementById('ctlAbyss').oninput = e=>{
   document.getElementById('valAbyss').textContent = v.toFixed(2).replace('.',',');
 };
 document.getElementById('btnReset').onclick = ()=>{ R3.resetView(); syncTilt(); };
-addEventListener('resize', ()=>{ if(mode3d) R3.resize(); });
+addEventListener('resize', ()=>{ if(opts.mode3d) R3.resize(); });
 
 /* ------------------------------------------------------------------ BOOT */
 const bm=document.getElementById('bootmsg');
