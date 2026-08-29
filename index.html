@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATLANTROPA — Le Grand Œuvre</title>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div id="brand">ATLANTROPA<small>INSTITUT DU GRAND ŒUVRE · MUNICH</small></div>
+    <div class="stat"><b id="sYear">1930</b><span>Année</span></div>
+    <div class="stat"><b id="sMoney">—</b><span>Trésor (Md)</span></div>
+    <div class="stat"><b id="sPower">0</b><span>Énergie (GW)</span></div>
+    <div class="stat"><b id="sLand">0</b><span>Terres (km²)</span></div>
+    <div class="stat"><b id="sSal">38,0</b><span>Salinité (g/L)</span></div>
+    <div class="stat"><b id="sRef">0</b><span>Déplacés (M)</span></div>
+    <div id="speed">
+      <span class="rate" id="rate">en pause</span>
+      <button data-sp="0" class="on" title="Pause">❚❚</button>
+      <button data-sp="1" title="Lent">▶</button>
+      <button data-sp="2" title="Normal">▶▶</button>
+      <button data-sp="3" title="Rapide">▶▶▶</button>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="mapwrap">
+      <canvas id="cv"></canvas>
+      <div id="layers">
+        <button data-l="terrain" class="on">Relief</button>
+        <button data-l="geo">Géologie</button>
+        <button data-l="eco">Économie</button>
+        <button data-l="sel">Sel</button>
+      </div>
+      <div id="mapopt">
+        <label><input type="checkbox" id="optBorders" checked> Frontières (1930)</label>
+        <label><input type="checkbox" id="optLabels" checked> Toponymes</label>
+      </div>
+      <div id="seaBadge"><b id="sLevel">0 m</b><span>Niveau de la Méditerranée</span></div>
+      <div id="legend"></div>
+      <div id="zoomhint">molette : zoom · glisser : déplacer</div>
+      <div id="boot"><div>CALCUL DU RELIEF ET DE LA BATHYMÉTRIE</div><div style="letter-spacing:.05em;font-family:Inter,sans-serif" id="bootmsg">…</div></div>
+    </div>
+
+    <div id="side">
+      <div id="tabs">
+        <button data-tab="ops" class="on">Chantiers</button>
+        <button data-tab="env">Milieu</button>
+        <button data-tab="geo">Nations</button>
+        <button data-tab="doc">Dossier</button>
+      </div>
+      <div class="pane on" id="pane-ops"></div>
+      <div class="pane" id="pane-env"></div>
+      <div class="pane" id="pane-geo"></div>
+      <div class="pane" id="pane-doc"></div>
+    </div>
+  </div>
+
+  <div id="log"></div>
+</div>
+
+<div class="overlay" id="ov" style="display:none"><div class="modal" id="ovm"></div></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

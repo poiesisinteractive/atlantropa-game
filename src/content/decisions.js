@@ -1,0 +1,415 @@
+import { S, nat } from '../core/state.js';
+import { dirty } from '../core/dirty.js';
+import { applyRates } from '../core/sim.js';
+import { E, SUD, RIV } from './effects.js';
+import { log } from '../ui/log.js';
+/* fy : année imposée · y : fenêtre · c : condition · rep : répétable après n ans */
+const DECISIONS=[
+/* ============ DIPLOMATIE ============ */
+{id:"souv",t:"Le mémorandum espagnol",k:"Diplomatie",y:[1930,1950],p:3,c:()=>!S.built.gib,
+ x:"Madrid rappelle que le détroit est espagnol au nord et chérifien au sud. Le ministre des Travaux publics vous reçoit avec un projet de loi déjà rédigé : la souveraineté sur l'ouvrage revient à l'Espagne, l'Institut n'en est que le concessionnaire pour quatre-vingt-dix-neuf ans.",
+ o:[["Signer la concession","Espagne +22 · Royaume-Uni −10",()=>{E.a("ES",22);E.a("UK",-10);}],
+    ["Exiger un statut international","Espagne −12 · soutien +6",()=>{E.a("ES",-12);E.s(6);}],
+    ["Convaincre les Cortès — 6 Md","Espagne +28 · trésor −6",()=>{E.a("ES",28);E.m(-6);}]]},
+
+{id:"rock",t:"Le Rocher",k:"Diplomatie",y:[1930,1962],p:3,c:()=>!nat.UK.mem,
+ x:"Londres ne discute pas le principe : elle discute la Royal Navy. Un barrage ferme la Méditerranée à ses cuirassés, et Gibraltar cesse d'être une clé pour devenir un cul-de-sac. L'Amirauté a fait ses calculs : une écluse de trois cents mètres, ou rien.",
+ o:[["Construire l'écluse militaire — 9 Md","Royaume-Uni +32 · trésor −9",()=>{E.a("UK",32);E.m(-9);}],
+    ["Promettre un droit de passage perpétuel","Royaume-Uni +14 · opinion −6",()=>{E.a("UK",14);E.o(-6);}],
+    ["Répondre que la mer n'est à personne","Royaume-Uni −16 · opinion +5",()=>{E.a("UK",-16);E.o(5);}]]},
+
+{id:"makhzen",t:"Le sultan et le détroit",k:"Diplomatie",y:[1930,1956],p:2,
+ x:"Le Résident général à Rabat vous fait savoir que le sultan n'a pas d'avis sur Atlantropa, et que la France en a un pour lui. Le Makhzen, lui, vous a écrit directement.",
+ o:[["Traiter par Paris","France +14 · Maroc −12",()=>{E.a("FR",14);E.a("MA",-12);}],
+    ["Traiter avec le Makhzen","Maroc +22 · France −12",()=>{E.a("MA",22);E.a("FR",-12);}],
+    ["Verser une rente annuelle — 4 Md","Maroc +24 · trésor −4",()=>{E.a("MA",24);E.m(-4);}]]},
+
+{id:"rome",t:"Rome veut sa route",k:"Diplomatie",y:[1935,1944],p:3,
+ x:"Le Duce propose vingt mille ouvriers pour la digue Sicile-Tunisie. Une clause y est jointe : l'ouvrage portera le nom d'une route impériale et l'Afrique du Nord relèvera de l'Italie.",
+ o:[["Accepter la clause","Italie +26 · +6 Md · opinion −16 · Sud −12",()=>{E.a("IT",26);E.m(6);E.o(-16);E.s(-8);E.aa(["TN","LY","FR"],-12);}],
+    ["Prendre les ouvriers, refuser la clause","Italie +8",()=>{E.a("IT",8);}],
+    ["Refuser en bloc","Italie −18 · opinion +8",()=>{E.a("IT",-18);E.o(8);}]]},
+
+{id:"montreux",t:"Convention de Montreux",k:"Diplomatie",fy:1936,
+ x:"La Turquie recouvre la souveraineté militaire sur les Détroits. Votre barrage des Dardanelles cesse d'être un problème d'ingénieur pour devenir une question de droit international.",
+ o:[["Reconnaître sans réserve","Turquie +24 · soutien −4",()=>{E.a("TR",24);E.s(-4);}],
+    ["Demander un régime d'exception","Turquie −16",()=>{E.a("TR",-16);}],
+    ["Offrir la moitié des recettes","Turquie +32 · −0,8 Md/an pendant 30 ans",()=>{E.a("TR",32);S.debtService+=0.8;S.debtUntil=Math.max(S.debtUntil,S.year+30);}]]},
+
+{id:"cairo",t:"Le Caire a lu le plan",k:"Diplomatie",y:[1934,1962],p:3,
+ x:"Si la Méditerranée descend de deux cents mètres, le canal de Suez devient une cascade — et l'Égypte, un pays sans canal. Le ministère des Travaux publics vous demande ce que vous comptez faire de sa principale ressource.",
+ o:[["Financer les écluses à fonds perdu — 10 Md","Égypte +30",()=>{E.a("EG",30);E.m(-10);}],
+    ["Proposer une redevance sur le trafic","Égypte +12 · recettes −0,4 Md/an",()=>{E.a("EG",12);S.debtService+=0.4;S.debtUntil=Math.max(S.debtUntil,S.year+40);}],
+    ["Répondre que le canal est britannique","Égypte −24 · Royaume-Uni +8",()=>{E.a("EG",-24);E.a("UK",8);}]]},
+
+{id:"congo",t:"La cuvette du Congo",k:"Diplomatie",y:[1935,1965],p:2,
+ x:"Le barrage du Congo noierait la cuvette centrale pour créer une mer intérieure : douze millions de personnes, deux cents langues. L'administration coloniale attend vos instructions et n'a pas l'air troublée.",
+ o:[["Procéder au déplacement — 12 Md","+6 M déplacés · opinion −18 · Congo −20",()=>{E.m(-12);E.r(6);E.o(-18);E.a("CG",-20);}],
+    ["Réduire le barrage de moitié — 5 Md","+1,5 M déplacés · projet Congo affaibli",()=>{E.m(-5);E.r(1.5);E.f("congoSmall");}],
+    ["Renoncer à l'Afrique intérieure","Congo +14 · soutien −8",()=>{E.a("CG",14);E.s(-8);E.f("noCongo");}]]},
+
+{id:"bandung",t:"Conférence de Bandung",k:"Diplomatie",fy:1955,
+ x:"Vingt-neuf nations d'Asie et d'Afrique se réunissent. Atlantropa y est décrit en une phrase qui fera le tour du monde : « le dernier rêve colonial de l'Europe, exécuté à la pelle mécanique ».",
+ o:[["Offrir une codirection aux riverains du Sud","Sud +14 · soutien −8",()=>{E.aa(SUD,14);E.s(-8);}],
+    ["Lancer une campagne de presse — 5 Md","opinion +9 · Sud −8",()=>{E.m(-5);E.o(9);E.aa(SUD,-8);}],
+    ["Ne pas répondre","Sud −14 · opinion −6",()=>{E.aa(SUD,-14);E.o(-6);}]]},
+
+{id:"soviet",t:"L'impérialisme hydraulique",k:"Diplomatie",y:[1948,1980],p:2,
+ x:"Moscou publie une brochure de quatre-vingts pages : Atlantropa, ou l'impérialisme hydraulique. Les partis communistes français et italien la reprennent mot pour mot dans leurs congrès.",
+ o:[["Ouvrir le consortium à l'Est","soutien +12 · Royaume-Uni −14 · opinion +4",()=>{E.s(12);E.a("UK",-14);E.o(4);}],
+    ["Répondre point par point — 3 Md","opinion +6",()=>{E.m(-3);E.o(6);}],
+    ["Mépriser","opinion −7",()=>{E.o(-7);}]]},
+
+{id:"onu",t:"Commission des Nations unies",k:"Diplomatie",y:[1950,2100],p:2,
+ x:"Une commission demande à visiter le chantier, à consulter vos relevés de salinité et à publier ses conclusions sans droit de regard de votre part.",
+ o:[["Ouvrir grand les portes","soutien +9 · opinion +8 · vos données deviennent publiques",()=>{E.s(9);E.o(8);E.f("audit");}],
+    ["Accueillir une délégation choisie","soutien +3",()=>{E.s(3);}],
+    ["Refuser l'inspection","soutien −12 · opinion −9",()=>{E.s(-12);E.o(-9);}]]},
+
+{id:"franco",t:"Douze mille hommes",k:"Diplomatie",y:[1940,1958],p:2,
+ x:"Le régime de Franco propose douze mille prisonniers politiques pour le chantier de Gibraltar. Le coût de la main-d'œuvre serait divisé par six. Le contrat tient en une page.",
+ o:[["Accepter","+8 Md · Espagne +12 · opinion −24",()=>{E.m(8);E.a("ES",12);E.o(-24);E.f("forcats");}],
+    ["Refuser publiquement","Espagne −16 · opinion +14 · soutien +5",()=>{E.a("ES",-16);E.o(14);E.s(5);}],
+    ["Refuser discrètement","Espagne −5 · opinion +4",()=>{E.a("ES",-5);E.o(4);}]]},
+
+{id:"ceca",t:"La Haute Autorité",k:"Diplomatie",y:[1951,1965],p:3,
+ x:"Six pays européens viennent de mettre en commun leur charbon et leur acier. Le président de la Haute Autorité vous reçoit : Atlantropa pourrait devenir le grand chantier fédérateur de l'Europe — à condition d'en abandonner la direction.",
+ o:[["Adosser l'Institut à la Communauté","France +16 · Italie +16 · soutien +12 · RU −10 · recettes ×1,2",()=>{E.a("FR",16);E.a("IT",16);E.s(12);E.a("UK",-10);S.incomeMul*=1.2;}],
+    ["Demander seulement un prêt","+14 Md · service 0,7 Md/an pendant 30 ans",()=>{E.dette(14,0.7,30);}],
+    ["Rester indépendant","soutien −5",()=>{E.s(-5);}]]},
+
+{id:"cyprus",t:"Chypre",k:"Diplomatie",y:[1955,1968],p:2,
+ x:"L'île s'embrase. Londres tient à ses bases souveraines, Athènes et Ankara se disputent le reste, et votre bassin oriental dépend des trois.",
+ o:[["Neutralité stricte","soutien −4",()=>{E.s(-4);}],
+    ["Soutenir Londres","RU +16 · Grèce −12 · Turquie −10",()=>{E.a("UK",16);E.a("GR",-12);E.a("TR",-10);}],
+    ["Proposer une médiation de l'Institut","Grèce +10 · Turquie +10 · RU −10",()=>{E.a("GR",10);E.a("TR",10);E.a("UK",-10);}]]},
+
+/* ============ INGÉNIERIE ============ */
+{id:"caissons",t:"La houle retourne les caissons",k:"Ingénierie",y:[1932,2100],p:3,c:()=>S.active.gib||(S.prog.gib>0&&!S.built.gib),
+ x:"L'Atlantique n'accepte pas qu'on le contredise. Trois caissons de béton de quarante mille tonnes ont basculé avant leur prise. Les scaphandriers refusent de redescendre.",
+ o:[["Doubler l'épaisseur — 8 Md","ouvrage renforcé",()=>{E.m(-8);E.f("solide");}],
+    ["Attendre les fenêtres météo","deux ans de retard",()=>{E.retard("gib",0.16);}],
+    ["Poursuivre malgré tout","risque de sinistre",()=>{ if(Math.random()<0.45){E.m(-13);E.o(-9);log("Le caisson n° 7 s'est ouvert. Onze morts.","bad");} else log("Le pari a tenu. Personne n'en parle.","good"); }]]},
+
+{id:"tower",t:"La tour de Behrens",k:"Ingénierie",y:[1932,1960],p:2,c:()=>!S.flags.tower,
+ x:"Peter Behrens a dessiné la tour : quatre cents mètres de béton armé au-dessus des écluses, un phare pour un continent. Elle ne sert strictement à rien, et c'est tout l'argument.",
+ o:[["La construire — 6 Md","opinion +15 · soutien +8",()=>{E.m(-6);E.o(15);E.s(8);E.f("tower");}],
+    ["La reporter","",()=>{}],
+    ["L'annuler","opinion −5 · +2 Md",()=>{E.o(-5);E.m(2);}]]},
+
+{id:"undertow",t:"Le courant de fond",k:"Ingénierie",y:[1930,2100],p:3,c:()=>S.built.gib&&S.levelW<-10,
+ x:"La veine d'eau salée qui sortait vers l'Atlantique n'existe plus. À sa place, un courant entrant creuse le pied de la digue à quarante mètres sous la surface. Le sondeur montre une fosse qui grandit de deux mètres par an.",
+ o:[["Enrochement massif — 11 Md","ouvrage sécurisé",()=>{E.m(-11);E.f("solide");}],
+    ["Réduire le débit turbiné","turbines à 20 %",()=>{S.turbine=Math.min(S.turbine,0.2);applyRates();}],
+    ["Surveiller et attendre","risque de brèche",()=>{E.f("fragile");}]]},
+
+{id:"kaplan",t:"Turbines à pales orientables",k:"Ingénierie",y:[1948,1990],p:2,c:()=>S.built.gib,
+ x:"Un ingénieur autrichien propose de remplacer les Francis par des Kaplan : rendement bien supérieur aux faibles chutes, c'est-à-dire précisément là où vous êtes.",
+ o:[["Rééquiper — 9 Md","puissance +12 %",()=>{E.m(-9);S.powerMul*=1.12;}],
+    ["Attendre la génération suivante","",()=>{}],
+    ["Refuser","opinion −3",()=>{E.o(-3);}]]},
+
+{id:"corrosion",t:"Le sel dans les machines",k:"Ingénierie",y:[1930,2100],p:3,c:()=>S.built.gib&&S.salW>39,
+ x:"À trente-neuf grammes par litre, l'eau n'est plus de l'eau de mer, c'est un électrolyte. Les aubes se piquent, les paliers grippent, les arrêts se multiplient.",
+ o:[["Aciers spéciaux et anodes — 7 Md","aucune perte",()=>{E.m(-7);}],
+    ["Arrêts d'entretien fréquents","puissance −8 %",()=>{S.powerMul*=0.92;}],
+    ["Laisser tourner jusqu'à la casse","puissance −16 % · opinion −5",()=>{S.powerMul*=0.84;E.o(-5);}]]},
+
+{id:"gallipoli",t:"Gallipoli",k:"Ingénierie",y:[1930,2100],p:3,c:()=>S.active.dard||(S.prog.dard>0&&!S.built.dard),
+ x:"La digue des Dardanelles s'appuie sur la presqu'île de Gallipoli. Les pelleteuses en remontent des ossements de 1915 par pleines bennes : Australiens, Néo-Zélandais, Turcs, mêlés.",
+ o:[["Ossuaire et mémorial — 3 Md","opinion +12 · RU +10 · Turquie +10",()=>{E.m(-3);E.o(12);E.a("UK",10);E.a("TR",10);}],
+    ["Déplacer le tracé","deux ans de retard",()=>{E.retard("dard",0.28);}],
+    ["Poursuivre sans rien dire","opinion −14 · RU −12",()=>{E.o(-14);E.a("UK",-12);}]]},
+
+{id:"messina",t:"L'avertissement de Catane",k:"Ingénierie",y:[1935,2100],p:2,c:()=>S.active.sic||S.built.sic,
+ x:"Un géologue de Catane vous rappelle que le détroit de Messine a tué quatre-vingt-deux mille personnes en 1908, que la faille est toujours là, et que vous voulez y poser une digue de béton.",
+ o:[["Campagne sismique complète — 5 Md","ouvrage adapté",()=>{E.m(-5);E.f("sismique");}],
+    ["Surdimensionner sans étudier — 8 Md","",()=>{E.m(-8);E.f("sismique");}],
+    ["Passer outre","risque durable",()=>{E.f("sismRisk");}]]},
+
+{id:"silt",t:"Les fleuves avancent",k:"Ingénierie",y:[1930,2100],p:2,c:()=>S.built.gib&&S.levelW<-30,
+ x:"Le Rhône, le Pô et le Nil continuent de charrier. Leurs deltas progressent dans le vide à des vitesses jamais vues et ensablent tout ce qu'ils atteignent, y compris vos prises d'eau.",
+ o:[["Dragage permanent","−0,6 Md/an pendant 40 ans",()=>{S.debtService+=0.6;S.debtUntil=Math.max(S.debtUntil,S.year+40);}],
+    ["Canaliser les fleuves — 14 Md","terres +, opinion +6",()=>{E.m(-14);E.o(6);}],
+    ["Laisser les deltas faire","ports encore plus loin de la mer",()=>{E.f("deltas");}]]},
+
+{id:"link",t:"La liaison des deux continents",k:"Ingénierie",y:[1930,2100],p:3,c:()=>S.built.sic,
+ x:"La digue Sicile-Tunisie peut porter une route, une voie ferrée, ou les deux. C'est le seul élément du plan que tout le monde approuve : relier physiquement l'Europe et l'Afrique.",
+ o:[["Autoroute et rail — 12 Md","recettes ×1,15 · opinion +10",()=>{E.m(-12);S.incomeMul*=1.15;E.o(10);}],
+    ["Route seule — 5 Md","recettes ×1,06 · opinion +5",()=>{E.m(-5);S.incomeMul*=1.06;E.o(5);}],
+    ["Une digue reste une digue","",()=>{}]]},
+
+{id:"breach",t:"Brèche",k:"Ingénierie",y:[1930,2100],p:1,c:()=>S.built.gib&&S.levelW<-40&&!S.flags.solide,
+ x:"Deux cent quarante mètres de digue emportés avant l'aube. La mer est remontée de trois mètres en huit jours, dans un bruit qu'on entendait à Tanger, avant qu'on ne parvienne à colmater.",
+ o:[["Reconstruction lourde — 16 Md","ouvrage définitivement sécurisé",()=>{E.m(-16);E.f("solide");E.o(-6);S.levelW=Math.min(0,S.levelW+3);dirty.base=true;}],
+    ["Colmatage économique — 7 Md","risque de récidive",()=>{E.m(-7);E.o(-10);S.levelW=Math.min(0,S.levelW+3);dirty.base=true;}],
+    ["Décréter l'état d'urgence et réquisitionner","−3 Md · opinion −16 · soutien +6",()=>{E.m(-3);E.o(-16);E.s(6);S.levelW=Math.min(0,S.levelW+3);dirty.base=true;}]]},
+
+{id:"hvdc",t:"Courant continu",k:"Ingénierie",y:[1958,2010],p:2,c:()=>S.built.grd,
+ x:"Les Suédois transportent du courant continu sur mille kilomètres sans tout perdre en route. Votre réseau alternatif dissipe un tiers de sa production entre Gibraltar et la Ruhr.",
+ o:[["Convertir le réseau — 10 Md","recettes ×1,25",()=>{E.m(-10);S.incomeMul*=1.25;}],
+    ["Convertir la dorsale seulement — 4 Md","recettes ×1,1",()=>{E.m(-4);S.incomeMul*=1.1;}],
+    ["Rester en alternatif","",()=>{}]]},
+
+/* ============ ÉCONOMIE ============ */
+{id:"crash",t:"Les banques ferment",k:"Économie",fy:1931,
+ x:"La Danatbank tombe, le Reich suspend ses paiements, les bourses ferment quatre jours. Votre budget de l'année s'évapore avant d'avoir servi.",
+ o:[["Réduire la voilure","−3 Md · soutien −5",()=>{E.m(-3);E.s(-5);}],
+    ["Emprunter à l'étranger","+10 Md · service 0,7 Md/an pendant 30 ans",()=>{E.dette(10,0.7,30);}],
+    ["Tout suspendre un an","soutien −10 · opinion −4",()=>{E.s(-10);E.o(-4);E.gel(2);}]]},
+
+{id:"bonds",t:"L'emprunt atlantropéen",k:"Économie",y:[1930,2100],p:3,rep:25,
+ x:"L'Institut peut émettre un emprunt gagé sur l'électricité future. Les banquiers de Bâle sont intéressés : ils veulent seulement savoir quand la première turbine tournera.",
+ o:[["Emprunt de 20 Md","service 1,2 Md/an pendant 40 ans",()=>{E.dette(20,1.2,40);}],
+    ["Emprunt de 10 Md","service 0,55 Md/an pendant 30 ans",()=>{E.dette(10,0.55,30);}],
+    ["Ne pas s'endetter","soutien +3",()=>{E.s(3);}]]},
+
+{id:"strike",t:"Grève des bétonniers",k:"Économie",y:[1930,2100],p:3,rep:22,c:()=>Object.values(S.active).some(v=>v),
+ x:"Les bétonniers ont posé les outils. Ils demandent la journée de huit heures, une prime de fond et, littéralement, un cimetière qui ne soit pas la mer.",
+ o:[["Céder sur tout — 3 Md","opinion +14 · chantiers ralentis un an",()=>{E.m(-3);E.o(14);}],
+    ["Négocier — 1 Md","opinion +5",()=>{E.m(-1);E.o(5);}],
+    ["Briser la grève","+2 Md · opinion −20 · soutien +5",()=>{E.m(2);E.o(-20);E.s(5);}]]},
+
+{id:"dead",t:"Le chiffre",k:"Économie",y:[1934,2100],p:2,c:()=>S.built.gib||S.prog.gib>0.4,
+ x:"Mille quatre cents morts depuis l'ouverture du chantier de Gibraltar. Le chiffre fuite dans la presse munichoise, accompagné de la liste des noms.",
+ o:[["Publier et indemniser — 5 Md","opinion +14",()=>{E.m(-5);E.o(14);}],
+    ["Contester le décompte","opinion −12",()=>{E.o(-12);}],
+    ["Ne rien dire","opinion −7",()=>{E.o(-7);}]]},
+
+{id:"dumping",t:"Des gigawatts sans clients",k:"Économie",y:[1930,2100],p:3,c:()=>S.power>12,
+ x:"Vos gigawatts n'ont pas d'acheteur. Les électriciens nationaux protègent leurs charbonnages, et personne n'a envie d'expliquer à ses mineurs qu'une mer les remplace.",
+ o:[["Vendre à perte pour capter l'industrie","−6 Md · recettes ×1,3 ensuite",()=>{E.m(-6);S.incomeMul*=1.3;}],
+    ["Créer vos propres industries — 12 Md","recettes ×1,2 · opinion −4",()=>{E.m(-12);S.incomeMul*=1.2;E.o(-4);}],
+    ["Attendre que la demande vienne","soutien −6",()=>{E.s(-6);}]]},
+
+{id:"alu",t:"L'aluminium",k:"Économie",y:[1935,2100],p:2,c:()=>S.power>25,
+ x:"L'aluminium ne se fabrique pas, il s'électrolyse. Installer les fonderies au pied même du barrage supprimerait tout transport d'énergie.",
+ o:[["Construire les fonderies — 10 Md","recettes ×1,2 · opinion −6",()=>{E.m(-10);S.incomeMul*=1.2;E.o(-6);}],
+    ["Concéder à des tiers","recettes ×1,08",()=>{S.incomeMul*=1.08;}],
+    ["Refuser","opinion +3",()=>{E.o(3);}]]},
+
+{id:"tourism",t:"Marchez là où nageaient les thons",k:"Économie",y:[1930,2100],p:2,c:()=>S.land>12000,
+ x:"Une agence de voyage munichoise propose des excursions au fond de la mer. La première brochure est déjà imprimée ; la couverture montre une famille pique-niquant sur une plaine de sel.",
+ o:[["Autoriser et taxer","recettes ×1,06 · opinion +7",()=>{S.incomeMul*=1.06;E.o(7);}],
+    ["Créer un parc national des fonds — 4 Md","opinion +15 · biodiversité +3",()=>{E.m(-4);E.o(15);E.b(3);}],
+    ["Interdire","opinion −4",()=>{E.o(-4);}]]},
+
+{id:"landspec",t:"La ruée",k:"Économie",y:[1930,2100],p:3,c:()=>S.land>35000,
+ x:"La terre découverte n'appartient à personne : c'était le fond d'une mer internationale. Des sociétés se constituent à Zurich pour l'acheter avant qu'elle ne sèche.",
+ o:[["Vendre les concessions","+18 Md · opinion −14 · soutien +5",()=>{E.m(18);E.o(-14);E.s(5);}],
+    ["Domaine public atlantropéen","opinion +13 · soutien −6",()=>{E.o(13);E.s(-6);}],
+    ["Partager entre les États riverains","riverains +14 · soutien +4",()=>{E.aa(RIV,14);E.s(4);}]]},
+
+{id:"insurance",t:"Plus personne ne veut assurer",k:"Économie",y:[1930,2100],p:2,c:()=>S.levelW<-55,
+ x:"Aucun réassureur n'accepte de couvrir un ouvrage dont la rupture viderait ou remplirait une mer. Les Lloyd's ont répondu en trois lignes et une virgule.",
+ o:[["Constituer une réserve — 12 Md","sécurité financière",()=>{E.m(-12);E.f("reserve");}],
+    ["Garantie des États membres","soutien −9",()=>{E.s(-9);}],
+    ["Continuer sans assurance","risque",()=>{E.f("noins");}]]},
+
+{id:"budget",t:"Arbitrage budgétaire",k:"Économie",y:[1930,2100],p:2,rep:14,
+ x:"Le conseil de l'Institut se réunit pour l'exercice. Les postes ne peuvent pas tous être servis, et chacun a son avocat autour de la table.",
+ o:[["Priorité aux ouvrages","coûts −15 % · opinion −6",()=>{S.costMul*=0.85;E.o(-6);}],
+    ["Priorité au social et aux ports","opinion +10 · coûts +10 %",()=>{E.o(10);S.costMul*=1.1;}],
+    ["Priorité à la diplomatie","toutes nations +6 · −2 Md",()=>{E.aa(Object.keys(nat),6);E.m(-2);}]]},
+
+/* ============ SOCIAL & VILLES ============ */
+{id:"venice",t:"La lettre du patriarche",k:"Villes",y:[1930,2100],p:4,c:()=>S.levelW<-12&&!S.built.ven,
+ x:"Le patriarche de Venise vous écrit. La lagune baisse ; les pilotis de mélèze, huit siècles sous l'eau, commencent à pourrir à l'air libre. Il ne demande pas l'arrêt du projet, il demande une digue.",
+ o:[["Lancer la digue de Venise","chantier ouvert · Italie +14",()=>{S.active.ven=true;E.a("IT",14);}],
+    ["Proposer de déplacer la ville — 20 Md","opinion −22 · Italie −22",()=>{E.m(-20);E.o(-22);E.a("IT",-22);}],
+    ["Répondre que Venise s'adaptera","opinion −16 · Italie −18",()=>{E.o(-16);E.a("IT",-18);}]]},
+
+{id:"sete",t:"Les filets brûlés",k:"Villes",y:[1930,2100],p:3,c:()=>S.salW>39.2,
+ x:"À Sète, à Mazara del Vallo, à Sfax, les pêcheurs brûlent leurs filets devant les préfectures. Ils ne demandent pas d'aide, ils demandent qu'on leur rende la mer.",
+ o:[["Fonds de reconversion — 8 Md","opinion +12 · riverains +8",()=>{E.m(-8);E.o(12);E.aa(RIV,8);}],
+    ["Ouvrir des quotas en Atlantique","opinion +5 · Espagne −8 · Maroc −8",()=>{E.o(5);E.a("ES",-8);E.a("MA",-8);}],
+    ["Ce n'est pas notre affaire","opinion −16 · riverains −10",()=>{E.o(-16);E.aa(RIV,-10);}]]},
+
+{id:"marseille",t:"Marseille sans mer",k:"Villes",y:[1930,2100],p:3,c:()=>(S.strand["Marseille"]||0)>8,
+ x:"La chambre de commerce de Marseille a voté à l'unanimité : un canal jusqu'au nouveau rivage, ou la fin du projet. Le préfet transmet sans commentaire.",
+ o:[["Creuser le canal — 9 Md","France +14 · opinion +9",()=>{E.m(-9);E.a("FR",14);E.o(9);}],
+    ["Lancer les ports en cascade","chantier ouvert",()=>{S.active.prt=true;}],
+    ["Refuser","France −18 · opinion −12",()=>{E.a("FR",-18);E.o(-12);}]]},
+
+{id:"colons",t:"Qui peuplera les terres neuves ?",k:"Villes",y:[1930,2100],p:4,c:()=>S.land>22000,
+ x:"C'est la question que le plan de Sörgel tranche en une ligne : des Européens. Les gouvernements riverains, qui ont lu la même ligne, demandent audience.",
+ o:[["Colonisation européenne","soutien +10 · Sud −26 · opinion −8",()=>{E.s(10);E.aa(SUD,-26);E.o(-8);E.f("colonial");}],
+    ["Priorité aux populations riveraines","riverains +18 · soutien −12",()=>{E.aa(RIV,18);E.s(-12);}],
+    ["Attribution par tirage international","opinion +8 · soutien −4",()=>{E.o(8);E.s(-4);}]]},
+
+{id:"wells",t:"Les puits tournent",k:"Villes",y:[1930,2100],p:3,c:()=>S.levelW<-45,
+ x:"Les nappes côtières se vident vers le nouveau niveau de base. De Sousse à Lattaquié, les puits donnent une eau saumâtre que les oliviers ne supportent pas.",
+ o:[["Grand programme d'adduction — 13 Md","riverains +14 · opinion +8",()=>{E.m(-13);E.aa(RIV,14);E.o(8);}],
+    ["Forages profonds — 6 Md","riverains +6",()=>{E.m(-6);E.aa(RIV,6);}],
+    ["Laisser les États s'en charger","+1,5 M déplacés · riverains −14",()=>{E.r(1.5);E.aa(RIV,-14);}]]},
+
+{id:"dusthealth",t:"Du gypse dans les poumons",k:"Villes",y:[1930,2100],p:4,c:()=>S.dust>16,
+ x:"Les hôpitaux de Provence et de Campanie signalent des bronchiolites d'un genre nouveau chez les enfants. Les prélèvements contiennent du gypse et de l'halite en fines aiguilles.",
+ o:[["Fixer la croûte par plantation — 15 Md","poussière −40 % · opinion +14",()=>{E.m(-15);E.f("fixation");E.o(14);}],
+    ["Étude épidémiologique — 3 Md","opinion +5",()=>{E.m(-3);E.o(5);}],
+    ["Contester le lien de causalité","opinion −20",()=>{E.o(-20);}]]},
+
+{id:"alex",t:"Alexandrie",k:"Villes",y:[1930,2100],p:3,c:()=>(S.strand["Alexandrie"]||0)>10,
+ x:"Port depuis Alexandre. Le rivage est à quarante kilomètres, le delta se dessèche par le bas, et deux millions de personnes vivent d'un trafic qui n'existe plus.",
+ o:[["Chenal de prolongement — 10 Md","Égypte +16 · opinion +8",()=>{E.m(-10);E.a("EG",16);E.o(8);}],
+    ["Aider à la relocalisation — 6 Md","Égypte +6 · +1 M déplacés",()=>{E.m(-6);E.a("EG",6);E.r(1);}],
+    ["Rien","Égypte −22 · +2 M déplacés",()=>{E.a("EG",-22);E.r(2);}]]},
+
+/* ============ SCIENCE & MILIEU ============ */
+{id:"rouch",t:"Le rapport Rouch",k:"Science",y:[1934,1958],p:3,
+ x:"L'océanographe Jules Rouch publie ses relevés : la Méditerranée perd déjà près d'un mètre d'eau par an par évaporation, entièrement compensé par l'Atlantique. Sa conclusion tient en une phrase : « Fermez le détroit et vous obtiendrez une saumure. »",
+ o:[["Financer une contre-expertise — 4 Md","opinion +6 · vérité retardée",()=>{E.m(-4);E.o(6);E.f("deni");}],
+    ["Publier ses données dans votre bulletin","opinion +12 · soutien −7",()=>{E.o(12);E.s(-7);}],
+    ["L'engager comme conseiller — 3 Md","opinion +8 · décisions mieux informées",()=>{E.m(-3);E.o(8);E.f("science");}]]},
+
+{id:"glomar",t:"Les carottes du Glomar Challenger",k:"Science",fy:1971,
+ x:"Le navire de forage remonte des carottes du fond ionien : des évaporites sur des kilomètres d'épaisseur. La Méditerranée s'est asséchée toute seule il y a cinq millions et demi d'années. La crise messinienne a duré six cent mille ans, et n'a presque rien laissé vivant.",
+ o:[["Y voir la preuve que c'est faisable","soutien +9 · opinion −12",()=>{E.s(9);E.o(-12);}],
+    ["Y voir un avertissement","opinion +14 · soutien −9",()=>{E.o(14);E.s(-9);E.f("averti");}],
+    ["Classer le rapport sans suite","opinion −8",()=>{E.o(-8);}]]},
+
+{id:"tuna",t:"Les madragues ferment",k:"Science",y:[1930,2100],p:3,c:()=>S.salW>39.8,
+ x:"Le thon rouge ne revient pas frayer. Les madragues de Sicile et d'Andalousie ferment après trois mille ans d'exploitation continue, et personne ne sait où il est passé.",
+ o:[["Réserve de reproduction — 6 Md","biodiversité +5 · opinion +9",()=>{E.m(-6);E.b(5);E.o(9);}],
+    ["Indemniser les pêcheurs — 5 Md","opinion +6",()=>{E.m(-5);E.o(6);}],
+    ["Rien","opinion −11 · biodiversité −4",()=>{E.o(-11);E.b(-4);}]]},
+
+{id:"posidonia",t:"Les herbiers meurent",k:"Science",y:[1930,2100],p:3,c:()=>S.levelW<-22,
+ x:"Les herbiers de posidonie disparaissent sur des milliers d'hectares. Ils étaient nurserie, filtre et ancrage des sédiments à la fois. Sans eux, les fonds découverts partiront au vent bien plus vite.",
+ o:[["Programme de replantation — 9 Md","biodiversité +7 · poussière réduite",()=>{E.m(-9);E.b(7);E.f("fixation");}],
+    ["Étudier le phénomène — 2 Md","opinion +4",()=>{E.m(-2);E.o(4);}],
+    ["Rien","biodiversité −7",()=>{E.b(-7);}]]},
+
+{id:"gulfstream",t:"Le modèle de Princeton",k:"Science",y:[1975,2100],p:3,c:()=>S.levelW<-70,
+ x:"Un modèle numérique conclut que la disparition de la veine d'eau salée méditerranéenne affaiblit la formation d'eau profonde en Atlantique nord. Sörgel avait promis des hivers plus doux à Londres ; le calcul dit l'inverse.",
+ o:[["Financer la recherche — 5 Md","opinion +10",()=>{E.m(-5);E.o(10);}],
+    ["Financer une contre-étude — 4 Md","soutien +5 · opinion −8",()=>{E.m(-4);E.s(5);E.o(-8);}],
+    ["Ignorer","opinion −9 · RU −10",()=>{E.o(-9);E.a("UK",-10);}]]},
+
+{id:"wrecks",t:"La flotte retrouvée",k:"Science",y:[1930,2100],p:3,c:()=>S.land>7000,
+ x:"Les fonds livrent leur cargaison : navires phéniciens, amphores romaines, un porte-avions de 1943 posé debout, et près de Marsala un bateau punique intact avec ses rames en place.",
+ o:[["Fouilles systématiques — 8 Md","opinion +18 · soutien +5",()=>{E.m(-8);E.o(18);E.s(5);}],
+    ["Vendre des concessions aux chercheurs de trésors","+7 Md · opinion −16",()=>{E.m(7);E.o(-16);}],
+    ["Laisser les ferrailleurs faire","+3 Md · opinion −9",()=>{E.m(3);E.o(-9);}]]},
+
+{id:"sunken",t:"Les villes ressortent",k:"Science",y:[1930,2100],p:3,c:()=>S.land>18000,
+ x:"Le port antique d'Alexandrie, Baïes, Pavlopetri : des quartiers entiers réapparaissent à l'air libre. Sous l'eau ils avaient tenu deux mille ans ; à l'air ils se délitent en une saison.",
+ o:[["Musée à ciel ouvert — 10 Md","opinion +19 · Égypte +10 · Grèce +10",()=>{E.m(-10);E.o(19);E.a("EG",10);E.a("GR",10);}],
+    ["Documenter puis abandonner — 3 Md","opinion +6",()=>{E.m(-3);E.o(6);}],
+    ["Rien","opinion −11",()=>{E.o(-11);}]]},
+
+{id:"mosquito",t:"Les marais du milieu",k:"Science",y:[1930,2100],p:2,c:()=>S.land>26000,
+ x:"Entre l'ancienne côte et la nouvelle s'étendent d'immenses vasières saumâtres qui ne sèchent jamais tout à fait. Le paludisme revient en Adriatique et en Égée, où il avait disparu.",
+ o:[["Assèchement et démoustication — 9 Md","opinion +11",()=>{E.m(-9);E.o(11);}],
+    ["Distribution de quinine — 3 Md","opinion +5",()=>{E.m(-3);E.o(5);}],
+    ["Rien","+1,5 M déplacés · opinion −13",()=>{E.r(1.5);E.o(-13);}]]},
+
+{id:"methane",t:"Les torchères de la plaine",k:"Science",y:[1930,2100],p:2,c:()=>S.levelW<-90,
+ x:"La décompression des sédiments libère le méthane qui y était piégé. Des torchères improvisées brûlent au milieu des plaines de sel, visibles à cinquante kilomètres.",
+ o:[["Capter et vendre — 11 Md","recettes ×1,15",()=>{E.m(-11);S.incomeMul*=1.15;}],
+    ["Torcher proprement — 3 Md","opinion +4",()=>{E.m(-3);E.o(4);}],
+    ["Laisser fuiter","opinion −8",()=>{E.o(-8);}]]},
+
+{id:"aral",t:"Les images de la mer d'Aral",k:"Science",y:[1988,2100],p:3,
+ x:"Des bateaux échoués à cent kilomètres du rivage, une plaine de sel où poussaient des melons, des taux de cancer multipliés par cinq. Les images font le tour du monde, et chacun y reconnaît votre carte en réduction.",
+ o:[["Publier votre propre bilan — 4 Md","opinion +11 · soutien −7",()=>{E.m(-4);E.o(11);E.s(-7);}],
+    ["Souligner les différences d'échelle","opinion −9",()=>{E.o(-9);}],
+    ["Ne rien dire","opinion −13",()=>{E.o(-13);}]]},
+
+{id:"climate",t:"Sommet de la Terre",k:"Science",y:[1992,2100],p:3,
+ x:"Un délégué fait remarquer que le seul ouvrage ayant jamais fait baisser le niveau des océans est le vôtre, et que ce n'est pas pour autant une raison de vous féliciter.",
+ o:[["Revendiquer le bénéfice climatique","soutien +11 · opinion −11",()=>{E.s(11);E.o(-11);}],
+    ["Reconnaître le bilan net","opinion +13 · soutien −9",()=>{E.o(13);E.s(-9);}],
+    ["Se taire","opinion −4",()=>{E.o(-4);}]]},
+
+/* ============ IDÉOLOGIE & OPINION ============ */
+{id:"ww2",t:"La Wehrmacht entre en Pologne",k:"Histoire",fy:1939,
+ x:"Vos ingénieurs reçoivent leur feuille de route. Le ciment part aux fortifications, l'acier aux blindages, et l'Institut n'a plus qu'un secrétariat et des maquettes.",
+ o:[["Mettre l'Institut en sommeil","gel 7 ans · soutien −7",()=>{E.gel(7);E.s(-7);E.m(-2);}],
+    ["Offrir les plans au régime pour survivre","+5 Md · soutien +7 · opinion −26",()=>{E.m(5);E.s(7);E.o(-26);E.f("collab");E.gel(5);}],
+    ["Transférer le siège à Zurich — 6 Md","gel 5 ans · opinion +11",()=>{E.m(-6);E.gel(5);E.o(11);}]]},
+
+{id:"sorgel",t:"Herman Sörgel est mort",k:"Histoire",fy:1952,
+ x:"Renversé ce matin par une voiture, à bicyclette, sur la route de son institut. Soixante-sept ans. Il n'aura jamais vu creuser une pelletée de son continent.",
+ o:[["Poursuivre à la lettre du plan","soutien +7 · opinion −5",()=>{E.s(7);E.o(-5);E.f("orthodoxe");}],
+    ["Réviser le projet à la lumière des faits","opinion +14 · soutien −7",()=>{E.o(14);E.s(-7);E.f("reforme");}],
+    ["En faire un martyr de la technique — 4 Md","opinion +11 · soutien +7",()=>{E.m(-4);E.o(11);E.s(7);}]]},
+
+{id:"nuke",t:"Obninsk produit du courant",k:"Histoire",fy:1954,
+ x:"Une centrale soviétique fabrique de l'électricité à partir d'uranium. Un de vos ingénieurs vous le dit sans détour : l'argument énergétique d'Atlantropa vient de mourir dans une salle de contrôle, à deux mille kilomètres d'ici.",
+ o:[["Recentrer le projet sur les terres et la liaison Afrique","soutien −7 · opinion +7",()=>{E.s(-7);E.o(7);E.f("pivot");}],
+    ["Contester le coût réel du nucléaire — 4 Md","soutien −5 · opinion −5",()=>{E.m(-4);E.s(-5);E.o(-5);}],
+    ["Ne rien changer au discours","soutien −18",()=>{E.s(-18);}]]},
+
+{id:"suezc",t:"Crise de Suez",k:"Histoire",fy:1956,
+ x:"Nasser nationalise le canal. Français et Britanniques débarquent, puis reculent sous la pression américaine. Votre projet d'écluses se retrouve au milieu de la table.",
+ o:[["Reconnaître la nationalisation","Égypte +26 · France −12 · RU −14",()=>{E.a("EG",26);E.a("FR",-12);E.a("UK",-14);}],
+    ["Soutenir l'expédition franco-britannique","France +12 · RU +12 · Sud −24 · opinion −12",()=>{E.a("FR",12);E.a("UK",12);E.aa(SUD,-24);E.o(-12);}],
+    ["Se déclarer hors du conflit","soutien −6",()=>{E.s(-6);}]]},
+
+{id:"deco",t:"Le mot Eurafrique",k:"Histoire",fy:1962,
+ x:"L'Algérie est indépendante. En cinq ans, dix-sept pays africains ont pris leur souveraineté. Le mot Eurafrique, qui figure au fronton de votre institut, est devenu une insulte diplomatique.",
+ o:[["Refonder le consortium sur l'égalité des voix","Sud +22 · soutien −14 · opinion +13",()=>{E.aa(SUD,22);E.s(-14);E.o(13);E.f("refonde");}],
+    ["Traiter avec chaque État séparément — 10 Md","Sud +12",()=>{E.m(-10);E.aa(SUD,12);}],
+    ["Maintenir la structure existante","Sud −28 · soutien −12",()=>{E.aa(SUD,-28);E.s(-12);E.f("deco");}]]},
+
+{id:"oil",t:"Embargo",k:"Histoire",fy:1973,
+ x:"Le baril quadruple en trois mois. Pour la première fois depuis vingt ans, on vous rappelle publiquement qu'une turbine ne consomme rien et n'appartient à aucun cartel.",
+ o:[["Vendre au prix du marché","+16 Md · opinion −9",()=>{E.m(16);E.o(-9);S.flags.oil=true;}],
+    ["Prix bloqués pour les riverains","riverains +18 · opinion +14",()=>{E.aa(RIV,18);E.o(14);E.m(4);S.flags.oil=true;}],
+    ["Investir dans l'extension du réseau — 12 Md","recettes ×1,3",()=>{E.m(-12);S.incomeMul*=1.3;S.flags.oil=true;}]]},
+
+{id:"film",t:"Le film",k:"Opinion",y:[1934,1970],p:2,
+ x:"Un studio propose un long-métrage : la mer se retire au son des cuivres, les moissons couvrent les fonds, des enfants courent vers l'Afrique en agitant des cartes. Le scénario est déjà écrit.",
+ o:[["Financer le film — 5 Md","opinion +15 · Sud −9",()=>{E.m(-5);E.o(15);E.aa(SUD,-9);}],
+    ["Financer un documentaire honnête — 3 Md","opinion +7 · soutien +4",()=>{E.m(-3);E.o(7);E.s(4);}],
+    ["Refuser","",()=>{}]]},
+
+{id:"pamphlet",t:"Le pamphlet",k:"Opinion",y:[1930,2100],p:2,rep:30,
+ x:"Un texte circule sous le manteau : « L'Europe n'a pas besoin d'un continent de plus, elle a besoin d'un contrat social. » Cent mille exemplaires en six mois.",
+ o:[["Répondre publiquement","opinion +5",()=>{E.o(5);}],
+    ["Poursuivre l'auteur en justice","opinion −15",()=>{E.o(-15);}],
+    ["Laisser dire","opinion −4",()=>{E.o(-4);}]]},
+
+{id:"nobel",t:"Une candidature",k:"Opinion",y:[1948,1985],p:2,c:()=>S.support>58,
+ x:"Un comité propose l'Institut pour le prix Nobel de la paix : le plus grand chantier civil de l'histoire, présenté comme l'alternative pacifique à la guerre pour les ressources.",
+ o:[["Accepter la candidature","soutien +13 · opinion +11",()=>{E.s(13);E.o(11);}],
+    ["Décliner par prudence","opinion +5 · soutien +3",()=>{E.o(5);E.s(3);}],
+    ["Proposer Sörgel à titre posthume","opinion +9",()=>{E.o(9);}]]},
+
+{id:"novel",t:"Le roman",k:"Opinion",y:[1963,2000],p:2,
+ x:"Un romancier américain imagine un monde où le projet a été mené à bien par une Allemagne victorieuse. Le livre est un succès mondial. Votre institut y figure sous son vrai nom, du mauvais côté.",
+ o:[["Attaquer en diffamation","opinion −11",()=>{E.o(-11);}],
+    ["En rire publiquement","opinion +7",()=>{E.o(7);}],
+    ["Ne pas réagir","",()=>{}]]},
+
+{id:"ecocide",t:"Le mot écocide",k:"Opinion",y:[1998,2100],p:3,
+ x:"Un tribunal international est saisi d'une plainte pour destruction délibérée d'un écosystème. C'est la première fois que le mot est employé devant un juge, et c'est votre nom qui figure à côté.",
+ o:[["Comparaître et plaider l'utilité publique","soutien −7 · opinion +7",()=>{E.s(-7);E.o(7);}],
+    ["Contester la compétence du tribunal","opinion −14",()=>{E.o(-14);}],
+    ["Reconnaître et proposer réparation — 20 Md","opinion +24 · soutien −11",()=>{E.m(-20);E.o(24);E.s(-11);}]]},
+
+{id:"referendum",t:"Référendum",k:"Opinion",y:[1970,2100],p:3,
+ x:"Trois pays riverains organisent le même jour un référendum sur la poursuite du projet. Les instituts de sondage donnent un résultat serré et personne ne croit les instituts de sondage.",
+ o:[["S'y soumettre sans campagne","dépend de l'opinion publique",()=>{ if(S.opinion>52){E.s(16);E.o(6);log("Le oui l'emporte de justesse. Le projet gagne une légitimité qu'il n'avait jamais eue.","good");} else {E.s(-22);E.o(-6);log("Le non l'emporte largement. Trois gouvernements se retirent du consortium.","bad");E.aa(RIV,-12);} }],
+    ["Faire campagne — 8 Md","opinion +9 puis vote",()=>{E.m(-8);E.o(9); if(S.opinion>48){E.s(12);log("Le oui passe. La campagne a coûté cher.","good");} else {E.s(-16);log("Même la campagne n'a pas suffi.","bad");} }],
+    ["Le déclarer sans objet juridique","opinion −18 · riverains −12",()=>{E.o(-18);E.aa(RIV,-12);}]]},
+
+{id:"school",t:"Géographie de demain",k:"Opinion",y:[1930,2100],p:1,rep:40,
+ x:"Les manuels scolaires de six pays décrivent Atlantropa au chapitre « géographie de demain ». Une génération entière grandira en sachant dessiner la nouvelle côte de mémoire.",
+ o:[["Fournir les cartes officielles — 2 Md","opinion +9",()=>{E.m(-2);E.o(9);}],
+    ["Laisser faire","opinion +3",()=>{E.o(3);}]]},
+
+{id:"conf",t:"Conférence du consortium",k:"Diplomatie",y:[1930,2100],p:2,rep:18,
+ x:"Les délégués se réunissent pour l'assemblée générale. L'ordre du jour est mince ; les couloirs ne le sont pas.",
+ o:[["Concessions financières aux membres — 5 Md","toutes nations +9",()=>{E.m(-5);E.aa(Object.keys(nat),9);}],
+    ["Discours sur la grandeur du projet","soutien +7 · opinion +4",()=>{E.s(7);E.o(4);}],
+    ["Exiger davantage de contributions","+6 Md · toutes nations −7",()=>{E.m(6);E.aa(Object.keys(nat),-7);}]]},
+
+{id:"incident",t:"Incident de chantier",k:"Ingénierie",y:[1930,2100],p:2,rep:16,c:()=>Object.values(S.active).some(v=>v),
+ x:"Une grue de trois cents tonnes a versé dans la fouille. Deux morts, six semaines d'arrêt, et un inspecteur du travail qui pose des questions précises.",
+ o:[["Arrêt complet et audit — 3 Md","opinion +8",()=>{E.m(-3);E.o(8);}],
+    ["Reprendre après constat","opinion −5",()=>{E.o(-5);}],
+    ["Reprendre le soir même","+1 Md · opinion −12",()=>{E.m(1);E.o(-12);}]]}
+];
+export { DECISIONS };

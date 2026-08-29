@@ -1,0 +1,21 @@
+{
+  "name": "atlantropa",
+  "version": "0.2.0",
+  "description": "Atlantropa — Le Grand Œuvre : jeu de gestion sur le projet d'Herman Sörgel",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.0",
+    "playwright-core": "^1.62.1",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "globals": "^17.11.0"
+  }
+}

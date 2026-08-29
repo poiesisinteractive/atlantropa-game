@@ -3,7 +3,15 @@
 Un jeu de gestion sur le projet réel d'**Herman Sörgel** (1885-1952) : barrer le détroit de
 Gibraltar, abaisser la Méditerranée de deux cents mètres, et souder l'Europe à l'Afrique.
 
-Une page HTML autonome, sans dépendance, sans build. Ouvrez `index.html`.
+```
+npm install
+npm run dev
+```
+
+Le jeu passe actuellement d'un rendu Canvas 2D à un rendu **three.js** en relief.
+La version 2D d'origine — un seul fichier, aucune dépendance — est figée dans
+[`reference/atlantropa-2d.html`](reference/atlantropa-2d.html) et sert d'étalon
+visuel pendant le portage.
 
 ---
 
