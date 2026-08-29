@@ -70,6 +70,14 @@
   #layers button{padding:4px 9px;font-size:11px}
   #mapopt{position:absolute;left:10px;top:48px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:6px 9px;font-size:11px;color:var(--dim);display:flex;gap:12px}
   #mapopt label{display:flex;align-items:center;gap:5px;cursor:pointer}
+  /* Les deux rendus se superposent dans #mapwrap ; un seul est visible. */
+  #mapwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+  #view3d{position:absolute;left:10px;top:82px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:8px 10px;font-size:10.5px;color:var(--dim);display:flex;flex-direction:column;gap:6px;width:210px}
+  #view3d label{display:grid;grid-template-columns:58px 1fr 34px;align-items:center;gap:7px}
+  #view3d input[type=range]{width:100%;height:3px}
+  #view3d b{color:var(--gold2);font-variant-numeric:tabular-nums;text-align:right;font-weight:500}
+  #view3d button{padding:4px 8px;font-size:10.5px}
+
   #legend{position:absolute;left:10px;bottom:10px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:8px 11px;font-size:10.5px;color:var(--dim);pointer-events:none;line-height:1.65;max-width:230px}
   #legend i{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:5px}
   #seaBadge{position:absolute;right:12px;top:12px;background:rgba(14,17,20,.9);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:4px;padding:8px 13px;text-align:right}

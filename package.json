@@ -16,6 +16,7 @@
     "vite": "^8.2.2"
   },
   "dependencies": {
-    "globals": "^17.11.0"
+    "globals": "^17.11.0",
+    "three": "^0.185.1"
   }
 }

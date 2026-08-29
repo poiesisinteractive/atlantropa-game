@@ -12,13 +12,20 @@ import { showModal } from './ui/modal.js';
 import { SPEEDS, setSpeedBtn, refresh } from './ui/hud.js';
 import { paint } from './render/paint.js';
 import { resize } from './render/interaction.js';
+import { cv } from './render/canvas.js';
+import * as R3 from './render3d/scene.js';
 import './ui/actions.js';
+
+/* Deux rendus cohabitent le temps du portage : l'ancien Canvas 2D, qui reste
+   la référence visuelle, et le relief three.js. */
+let mode3d = false, inited3d = false;
 
 let last = performance.now(), lastUI = 0, lastMap = 0;
 
 /* Poignée d'inspection : sert au test de fumée (tools/smoke.mjs) et au
    débogage à la console. Aucun code de jeu n'en dépend. */
-window.__atl = { S, opts, dirty, dec, stepYear, measure, measureExact, refresh, paint };
+window.__atl = { S, opts, dirty, dec, stepYear, measure, measureExact, refresh, paint,
+                 R3, set3d: (on) => setMode3d(on) };
 
 function loop(t){
   const dt=Math.min(0.12,(t-last)/1000); last=t;
@@ -36,7 +43,11 @@ function loop(t){
     S.frac+=yrs;
     while(S.frac>=1){ S.frac-=1; stepYear(); if(S.ended||dec.cur)break; }
   }
-  if(dirty.base && t-lastMap>300){ lastMap=t; paint(); }
+  if(mode3d) R3.frame();
+  // Le rendu 2D reconstruit 772 200 pixels sur le fil principal : il ne peut
+  // pas suivre le niveau image par image, d'où ce bridage. Le rendu 3D n'en
+  // a pas besoin, le niveau n'y est qu'un uniform.
+  else if(dirty.base && t-lastMap>300){ lastMap=t; paint(); }
   if(dirty.ui && t-lastUI>200){ dirty.ui=false; lastUI=t; refresh(); }
   requestAnimationFrame(loop);
 }
@@ -52,6 +63,46 @@ document.querySelectorAll('#layers button').forEach(b=>b.onclick=()=>{
 document.getElementById('optBorders').onchange=e=>{opts.showBorders=e.target.checked;paint();};
 document.getElementById('optLabels').onchange=e=>{opts.showLabels=e.target.checked;paint();};
 addEventListener('keydown',e=>{ if(e.code==='Space'){e.preventDefault();S.speed=S.speed?0:1;setSpeedBtn();} });
+
+/* ------------------------------------------------------------- RELIEF 3D */
+const panel3d = document.getElementById('view3d');
+const btn3d = document.getElementById('btn3d');
+
+function setMode3d(on){
+  mode3d = on;
+  if(on && !inited3d){
+    inited3d = true;
+    document.getElementById('mapwrap').style.cursor='grab';
+    R3.init(document.getElementById('mapwrap'));
+  }
+  btn3d.classList.toggle('on', on);
+  panel3d.hidden = !on;
+  cv.hidden = on;
+  const c3 = R3.domElement(); if(c3) c3.hidden = !on;
+  if(on){ R3.resize(); syncTilt(); } else { dirty.base=true; paint(); }
+}
+btn3d.onclick = ()=>setMode3d(!mode3d);
+
+function syncTilt(){
+  const d = Math.round(R3.getTilt());
+  document.getElementById('ctlTilt').value = d;
+  document.getElementById('valTilt').textContent = d+'°';
+}
+document.getElementById('ctlTilt').oninput = e=>{
+  R3.setTilt(+e.target.value);
+  document.getElementById('valTilt').textContent = e.target.value+'°';
+};
+document.getElementById('ctlRelief').oninput = e=>{
+  R3.setVScale({relief:+e.target.value});
+  document.getElementById('valRelief').textContent = e.target.value;
+};
+document.getElementById('ctlAbyss').oninput = e=>{
+  const v = +e.target.value/100;
+  R3.setVScale({compress:v});
+  document.getElementById('valAbyss').textContent = v.toFixed(2).replace('.',',');
+};
+document.getElementById('btnReset').onclick = ()=>{ R3.resetView(); syncTilt(); };
+addEventListener('resize', ()=>{ if(mode3d) R3.resize(); });
 
 /* ------------------------------------------------------------------ BOOT */
 const bm=document.getElementById('bootmsg');
