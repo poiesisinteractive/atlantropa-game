@@ -3,7 +3,7 @@
 Un jeu de gestion sur le projet réel d'**Herman Sörgel** (1885-1952) : barrer le détroit de
 Gibraltar, abaisser la Méditerranée de deux cents mètres, et souder l'Europe à l'Afrique.
 
-```
+```sh
 npm install
 npm run dev
 ```
@@ -45,11 +45,22 @@ des lagunes hypersalines) encadrent l'effondrement de la biodiversité.
 
 ## Carte
 
-- Maillage **1300 × 594** cellules, rasterisation par balayage de lignes.
-- Côtes lissées (Chaikin, 2 passes).
-- **Modèle d'altitude** (39 massifs) et **bathymétrie** (19 bassins, 10 hauts-fonds),
-  puis **ombrage** au soleil du nord-ouest : en se retirant, la mer découvre ses talus,
-  ses canyons et ses plaines abyssales.
+- Maillage **1300 × 594** cellules — environ 3,37 km de côté.
+- **Relief réel** : topographie et bathymétrie tirées des *Terrain Tiles* (AWS Open Data,
+  agrégat de SRTM, NED, ETOPO1 et GEBCO), rééchantillonnées hors ligne sur cette grille
+  par `tools/fetch-dem.mjs`, puis affinées par deux octaves de bruit fractal d'amplitude
+  proportionnelle à la pente — la donnée est juste à 3,4 km, le grain manquait.
+- Le **trait de côte dessiné à la main** (lissé par Chaikin) ne sert plus qu'à dire à quel
+  bassin appartient une cellule d'eau : c'est lui qui porte la coupure ouest/est de la
+  ligne Cap Bon–Trapani, que nulle donnée ne donnerait. Le relief, lui, décide d'où est
+  la terre — d'où les Cyclades, la Dalmatie et les Baléares, que la carte à la main ne
+  dessinait pas.
+- **Ombrage** dérivé du relief, soleil au nord-ouest : en se retirant, la mer découvre
+  ses talus, ses canyons et ses plaines abyssales.
+- Conséquence inattendue du relief réel : la simulation est devenue juste. Le volume de
+  la Méditerranée y vaut 3 775 000 km³ contre 3 750 000 réels, sa surface 2 378 000 km²
+  contre 2 500 000, et la salinité atteinte à −200 m 42,8 g/L — dans la fourchette
+  annoncée plus haut, là où la bathymétrie dessinée à la main donnait 48,9.
 - Frontières politiques de **1930** (Yougoslavie, Transjordanie, Palestine mandataire,
   Libye italienne).
 - Quatre calques : **Relief**, **Géologie** (isobathes, volcans, failles, évaporites
@@ -97,10 +108,41 @@ et de la circulation atlantique, rebond isostatique et sismicité.
 - Atlas Obscura, « The Bonkers Real-Life Plan to Drain the Mediterranean »
 - Environment & Society Portal, « Atlantropa — Endless Energy from the Mediterranean Sea »
 
-Le trait de côte et la bathymétrie sont schématiques et dessinés à la main : c'est un jeu,
-pas un SIG.
+Le relief et la bathymétrie sont réels ; le trait de côte reste schématique, dessiné à la
+main, et les frontières sont celles de 1930. C'est un jeu, pas un SIG.
 
 ## Technique
 
-Aucune dépendance, aucun outil de build, un seul fichier. Canvas 2D, `ImageData`,
-transformées de distance par chanfrein. Testé sur navigateurs de bureau récents.
+Vite et modules ES. Deux rendus cohabitent : le **relief three.js** (bouton *3D*), et
+le **Canvas 2D** d'origine, conservé comme étalon visuel.
+
+Le terrain ne change jamais de la partie : il part au GPU une fois pour toutes en texture
+de hauteur, et les trois niveaux de bassin ne sont plus que des uniforms. Une image de
+carte coûte 3,5 ms au lieu de 40, et le niveau descend en continu au lieu de sauter trois
+fois par seconde. L'échelle verticale a deux régimes — dilatée de 0 à ±300 m, où tout se
+joue, comprimée logarithmiquement au-delà — sans quoi les 200 mètres d'assèchement
+seraient invisibles au fond d'une fosse de 5 000.
+
+Aires et volumes immergés se lisent dans une courbe hypsométrique cumulée au mètre : la
+bathymétrie étant fixe, ils ne dépendent que du niveau. C'est 6 000 fois plus rapide que
+le balayage des 772 200 cellules qu'elle remplace, à l'identique.
+
+```sh
+npm run dev      # serveur de développement
+npm run build    # bundle de production
+npm run lint
+
+node tools/fetch-dem.mjs     # recuire le relief depuis les Terrain Tiles
+node tools/smoke.mjs         # non-régression : boot, 40 ans, calques, onglets
+node tools/hypso-check.mjs   # la table hypsométrique contre le balayage complet
+node tools/shot3d.mjs        # captures du relief
+```
+
+Les deux derniers outils pilotent Chromium via `playwright-core`, en réutilisant les
+navigateurs déjà installés sur la machine.
+
+### Données
+
+Relief : [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/), AWS Open Data —
+agrégat de SRTM (NASA), NED (USGS), ETOPO1 et GEBCO. Domaine public ou licences libres
+selon les sources.

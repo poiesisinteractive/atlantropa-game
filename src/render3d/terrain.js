@@ -1,5 +1,5 @@
 import { PlaneGeometry, ShaderMaterial, Mesh, Vector2, Vector3, Vector4, DoubleSide } from 'three';
-import { MW, MH, GW_, GH_ } from '../core/geo.js';
+import { MW, MH, GW_, GH_, LON0, LAT1, PXDEG, LATSCALE } from '../core/geo.js';
 import { YOF_GLSL, vscaleUniform } from './scale.js';
 import { heightTex, maskTex, UV_FIX, TEXEL } from './textures.js';
 
@@ -34,6 +34,7 @@ uniform vec2 uSal;        // salinité ouest, est
 uniform vec3 uSun;        // direction de la lumière, normalisée
 uniform int  uLayer;      // 0 relief · 1 géologie · 2 économie · 3 sel
 uniform float uCoast;     // intensité du liseré de côte
+uniform vec4 uGeo;        // lon0, étendue en lon, lat max, étendue en lat
 varying vec2 vSt;
 varying float vH;
 ${YOF_GLSL}
@@ -93,6 +94,19 @@ void main(){
       else if (t < 0.50) c = mix(vec3(124.,133., 84.), vec3(158.,140., 96.), (t - 0.18) / 0.32) / 255.;
       else if (t < 0.80) c = mix(vec3(158.,140., 96.), vec3(150.,118., 96.), (t - 0.50) / 0.30) / 255.;
       else               c = mix(vec3(150.,118., 96.), vec3(226.,224.,222.), (t - 0.80) / 0.20) / 255.;
+
+      /* La teinte hypsométrique seule peint la Libye comme la Provence. Sous
+         la latitude de la Méditerranée le couvert végétal disparaît : on
+         glisse vers l'ocre, en épargnant les hauts massifs — l'Atlas est
+         enneigé — et le ruban vert du Nil, seule eau du désert. */
+      float lat = uGeo.z - vSt.y * uGeo.w;
+      float lon = uGeo.x + vSt.x * uGeo.y;
+      float arid = smoothstep(35.5, 30.0, lat) * (1.0 - smoothstep(1400.0, 2600.0, vH));
+      float nil  = smoothstep(1.9, 0.55, abs(lon - 31.3))
+                 * smoothstep(170.0, 25.0, vH)
+                 * smoothstep(33.0, 31.6, lat);
+      arid *= 1.0 - nil;
+      c = mix(c, mix(vec3(186.,164.,116.), vec3(214.,192.,142.), t / 0.5) / 255., arid * 0.88);
     }
     c *= (uLayer == 0) ? sh : mix(1.0, sh, 0.55);
     c *= 0.97 + 0.06 * nz;
@@ -100,19 +114,19 @@ void main(){
     float lv  = levelOf(b);
     float col = lv - vH;                       // hauteur de la colonne d'eau
     if (col > 0.0) {
-      /* ---- fond encore immergé : le shader de l'eau passera par-dessus ---- */
-      if      (uLayer == 1) c = isoColor(col);
-      else if (uLayer == 3) {
-        float sal = (b > 2.5 && b < 3.5) ? uSal.y : (b > 1.5 && b < 2.5) ? uSal.x : 38.0;
-        float t = clamp((sal - 38.0) / 7.0, 0.0, 1.0);
-        c = mix(vec3(66.,150.,190.), vec3(206.,176.,96.), t) / 255.;
-        c *= 1.0 - 0.45 * clamp(col / 2600.0, 0.0, 1.0);
-      } else {
-        float t = pow(clamp(col / 2600.0, 0.0, 1.0), 0.62);
-        c = mix(vec3(112.,198.,224.), vec3(10., 36., 76.), t) / 255.;
-        if (col < 40.0) c = mix(c, vec3(198.,228.,214.) / 255., vec3(0.4, 0.4, 0.32));
+      /* ---- fond encore immergé ----
+         On le peint pour ce qu'il est — sédiment sur le plateau, vase grise
+         en profondeur — et non en bleu : c'est la nappe, transparente, qui
+         donnera sa couleur à l'eau. Les hauts-fonds laissent donc voir ce
+         qui va émerger. Le calque géologique fait exception : ses isobathes
+         sont justement une lecture de la colonne d'eau. */
+      if (uLayer == 1) { c = isoColor(col); c *= mix(1.0, sh, 0.12); }
+      else {
+        float td = pow(clamp(col / 1800.0, 0.0, 1.0), 0.55);
+        c = mix(vec3(138.,120., 90.), vec3(52., 56., 62.), td) / 255.;
+        c *= sh;
+        c *= 0.95 + 0.10 * nz;
       }
-      c *= mix(1.0, sh, uLayer == 1 ? 0.12 : 0.30);
     } else {
       /* ---- fond découvert : vase, puis croûte d'halite et de gypse ---- */
       float evap = clamp(-vH / 700.0, 0.0, 1.0);
@@ -155,6 +169,7 @@ export function makeTerrain() {
       uSun: { value: new Vector3(-0.5, 0.7071, -0.5).normalize() },
       uLayer: { value: 0 },
       uCoast: { value: 1 },
+      uGeo: { value: new Vector4(LON0, GW_ / PXDEG, LAT1, GH_ / (PXDEG * LATSCALE)) },
     },
   });
 

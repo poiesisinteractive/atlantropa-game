@@ -2,7 +2,10 @@ import './style.css';
 
 import { S, opts } from './core/state.js';
 import { dirty } from './core/dirty.js';
-import { buildGrid } from './core/grid.js';
+import { buildGrid, setDem } from './core/grid.js';
+import * as grid from './core/grid.js';
+import * as geo from './core/geo.js';
+import demUrl from './data/dem.bin?url';
 import { buildHypsometry } from './core/hypsometry.js';
 import { measure, measureExact, computeStrand, updateExposure, stepYear } from './core/sim.js';
 import { dec } from './content/engine.js';
@@ -25,7 +28,7 @@ let last = performance.now(), lastUI = 0, lastMap = 0;
 /* Poignée d'inspection : sert au test de fumée (tools/smoke.mjs) et au
    débogage à la console. Aucun code de jeu n'en dépend. */
 window.__atl = { S, opts, dirty, dec, stepYear, measure, measureExact, refresh, paint,
-                 R3, set3d: (on) => setMode3d(on) };
+                 R3, set3d: (on) => setMode3d(on), grid, geo };
 
 function loop(t){
   const dt=Math.min(0.12,(t-last)/1000); last=t;
@@ -106,11 +109,20 @@ addEventListener('resize', ()=>{ if(mode3d) R3.resize(); });
 
 /* ------------------------------------------------------------------ BOOT */
 const bm=document.getElementById('bootmsg');
-setTimeout(()=>{ bm.textContent="rasterisation des côtes…"; setTimeout(()=>{
+const breathe=()=>new Promise(r=>setTimeout(r,30));
+
+(async ()=>{
+  bm.textContent="chargement du relief…"; await breathe();
+  try{
+    const r=await fetch(demUrl);
+    if(r.ok) setDem(new Int16Array(await r.arrayBuffer()));
+  }catch{ /* sans MNT, le relief dessiné à la main prend le relais */ }
+
+  bm.textContent="rasterisation des côtes…"; await breathe();
   buildGrid();
-  bm.textContent="mesure des volumes…";
+  bm.textContent="mesure des volumes…"; await breathe();
   buildHypsometry();
-  setTimeout(()=>{
+  {
     const m0=measure(); S.vol0W=m0.vW; S.vol0E=m0.vE; S.area0=m0.aW; S.areaE0=m0.aE;
     computeStrand(true); updateExposure();
     document.getElementById('boot').remove();
@@ -134,5 +146,5 @@ setTimeout(()=>{ bm.textContent="rasterisation des côtes…"; setTimeout(()=>{
         <button onclick="hideModal()">Regarder la carte d'abord</button>
       </div>`);
     requestAnimationFrame(loop);
-  },30);
-},30);},40);
+  }
+})();

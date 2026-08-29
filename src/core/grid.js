@@ -11,6 +11,12 @@ const shade =new Float32Array(N);
 const noise =new Float32Array(N);
 let coastDist=new Float32Array(N);
 
+/* Modèle numérique de terrain réel, cuit hors ligne par tools/fetch-dem.mjs
+   sur cette grille exacte. Absent, on retombe sur le relief dessiné à la
+   main — gaussiennes et distance à la côte — de la version d'origine. */
+let dem=null;
+function setDem(a){ dem=(a&&a.length===N)?a:null; }
+
 /* Rasterisation par balayage de lignes : bien plus rapide qu'un test
    point-dans-polygone par cellule. */
 function scanFill(poly,cb){
@@ -41,6 +47,21 @@ function buildGrid(){
   scanFill(MARM,i=>basin[i]=4);
   scanFill(ATL,i=>basin[i]=1);
   for(const isl of ISLANDS) scanFill(isl,i=>basin[i]=0);
+
+  /* Répartition des rôles entre le trait dessiné et le MNT : le polygone dit
+     à quel bassin une cellule d'eau appartient — c'est lui qui porte la
+     coupure ouest/est de la ligne Cap Bon–Trapani, que nulle donnée ne
+     donnerait — et le MNT dit où est la terre. Les Cyclades, la Dalmatie,
+     les Baléares, Malte : autant d'îles réelles que la carte à la main ne
+     dessine pas, et qui sans cela seraient de l'eau à quatre mètres,
+     émergeant toutes dès le premier mètre d'assèchement.
+
+     L'inverse n'est pas vrai : une cellule dessinée en terre reste terre même
+     si le MNT la place sous le niveau de la mer. C'est ce qui garde la
+     dépression de Qattara et la mer Morte hors de la Méditerranée — elles
+     sont à -133 et -430 m, et elles ne communiquent pas. */
+  if(dem) for(let i=0;i<N;i++) if(basin[i] && dem[i]>0) basin[i]=0;
+
   for(let i=0;i<N;i++) isLand[i]=basin[i]?0:1;
 
   for(let gy=0;gy<GH_;gy++){ const la=gy2lat(gy);
@@ -74,25 +95,101 @@ function buildGrid(){
   for(let gy=0;gy<GH_;gy++){ const la=gy2lat(gy);
     for(let gx=0;gx<GW_;gx++){ const i=gy*GW_+gx, lo=gx2lon(gx);
       if(isLand[i]){
-        let e=Math.min(900,landDist[i]*CELLKM*3.2);
-        for(const r of RANGES){ const u=(lo-r[0])/r[2], v=(la-r[1])/r[3];
-          const g=r[4]*Math.exp(-(u*u+v*v)); if(g>e)e=g; }
-        elev[i]=e*(0.90+0.20*Math.abs(noise[i])); depth[i]=0;
+        let e;
+        if(dem){
+          /* Le trait de côte reste celui, dessiné à la main, qui porte
+             l'identité des bassins ; le MNT ne donne que l'altitude. Là où
+             les deux divergent — d'une ou deux cellules au plus — un collier
+             littoral empêche la falaise parasite, sans écrêter les reliefs
+             côtiers réels, qui montent moins vite que la borne. */
+          /* On laisse passer les altitudes négatives : Qattara à -133 m et la
+             mer Morte à -430 m sont des terres en creux, et le relief doit le
+             montrer. */
+          e=Math.min(dem[i], 40+landDist[i]*CELLKM*200);
+        } else {
+          e=Math.min(900,landDist[i]*CELLKM*3.2);
+          for(const r of RANGES){ const u=(lo-r[0])/r[2], v=(la-r[1])/r[3];
+            const g=r[4]*Math.exp(-(u*u+v*v)); if(g>e)e=g; }
+          e*=0.90+0.20*Math.abs(noise[i]);
+        }
+        elev[i]=e; depth[i]=0;
       } else {
-        let d=0;
-        for(const b of BASINS){ const u=(lo-b[0])/b[2], v=(la-b[1])/b[3];
-          const g=b[4]*Math.exp(-(u*u+v*v)); if(g>d)d=g; }
-        d=Math.min(d,coastDist[i]*CELLKM*11+5);
-        for(const s of SHOALS){ const u=(lo-s[0])/s[2], v=(la-s[1])/s[3];
-          const w=Math.exp(-(u*u+v*v)); if(w>0.05) d=d*(1-w)+Math.min(d,s[4])*w; }
-        // canyons sous-marins : rides fines pour donner du grain au relief noyé
-        const rip=Math.sin(lo*7.3+la*5.1)*Math.sin(lo*3.1-la*9.7);
-        depth[i]=Math.max(4,d*(0.96+0.08*Math.abs(noise[i]))+rip*Math.min(140,d*0.06));
+        let d;
+        if(dem){
+          d=Math.min(Math.max(4,-dem[i]), 8+coastDist[i]*CELLKM*260);
+        } else {
+          d=0;
+          for(const b of BASINS){ const u=(lo-b[0])/b[2], v=(la-b[1])/b[3];
+            const g=b[4]*Math.exp(-(u*u+v*v)); if(g>d)d=g; }
+          d=Math.min(d,coastDist[i]*CELLKM*11+5);
+          for(const s of SHOALS){ const u=(lo-s[0])/s[2], v=(la-s[1])/s[3];
+            const w=Math.exp(-(u*u+v*v)); if(w>0.05) d=d*(1-w)+Math.min(d,s[4])*w; }
+          // canyons sous-marins : rides fines pour donner du grain au relief noyé
+          const rip=Math.sin(lo*7.3+la*5.1)*Math.sin(lo*3.1-la*9.7);
+          d=Math.max(4,d*(0.96+0.08*Math.abs(noise[i]))+rip*Math.min(140,d*0.06));
+        }
+        depth[i]=Math.max(4,d);
         elev[i]=0;
       }
     }
   }
+  if(dem) fractalDetail();
   buildShade();
+}
+
+/* --------------------------------------------------------- DÉTAIL FRACTAL
+
+   Le MNT est échantillonné à 3,37 km : à cette maille, une vallée alpine
+   tient dans deux cellules et un canyon sous-marin dans une. La structure
+   est juste, le grain manque. On ajoute donc trois octaves de bruit de
+   valeur, d'amplitude proportionnelle à la pente locale — les plaines
+   restent des plaines, les talus se rident.
+
+   Ce détail est cuit dans elev/depth, pas seulement dans le rendu : la
+   courbe hypsométrique, les distances au rivage et l'affichage lisent ainsi
+   tous le même terrain. */
+
+function hash2(x,y){
+  const s=Math.sin(x*127.1+y*311.7)*43758.5453;
+  return s-Math.floor(s);
+}
+function vnoise(x,y){
+  const xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi;
+  const u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  const a=hash2(xi,yi), b=hash2(xi+1,yi), c=hash2(xi,yi+1), d=hash2(xi+1,yi+1);
+  return (a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v)*2-1;
+}
+/* Deux octaves seulement, et la plus fine à trois cellules de longueur
+   d'onde. Une octave sous deux cellules ne serait plus du relief mais du
+   bruit blanc d'un sommet à l'autre : en relief, cela donne des lames. */
+function fbm(x,y){
+  return vnoise(x,y)*0.66 + vnoise(x*2.31,y*2.31)*0.34;
+}
+
+function fractalDetail(){
+  // Champ de hauteur signé, avant détail : sert à mesurer la pente.
+  const h0=new Float32Array(N);
+  for(let i=0;i<N;i++) h0[i]= isLand[i]? elev[i] : -depth[i];
+
+  for(let y=0;y<GH_;y++)for(let x=0;x<GW_;x++){
+    const i=y*GW_+x;
+    const xa=x>0?h0[i-1]:h0[i], xb=x<GW_-1?h0[i+1]:h0[i];
+    const ya=y>0?h0[i-GW_]:h0[i], yb=y<GH_-1?h0[i+GW_]:h0[i];
+    const slope=Math.hypot(xb-xa,yb-ya)*0.5;          // mètres par cellule
+
+    // Amplitude : un socle, plus une part de la pente. Étouffée près du
+    // niveau zéro pour ne pas faire surgir d'îlots ni noyer les basses côtes.
+    let amp=Math.min(45, 3+slope*0.10);
+    const near=Math.min(1, Math.abs(h0[i])/70);
+    amp*=near*near*(3-2*near);
+
+    // La base à 7 cellules de longueur d'onde : trois octaves descendent
+    // jusqu'à un peu moins de deux cellules, la limite du maillage.
+    const d=fbm(x/7,y/7)*amp;
+    const h=h0[i]+d;
+    if(isLand[i]) elev[i]=h;              // les terres en creux restent en creux
+    else depth[i]=Math.max(4,-h);
+  }
 }
 /* Ombrage : lumière au nord-ouest, 45° */
 function buildShade(){
@@ -111,4 +208,4 @@ function buildShade(){
   }
 }
 export { isLand, depth, elev, basin, expo, shade, noise, coastDist,
-         scanFill, buildGrid, buildShade };
+         scanFill, buildGrid, buildShade, setDem };

@@ -55,24 +55,34 @@ void main(){
   if (col <= 0.0) discard;
 
   vec3 c;
-  if (uLayer == 1) c = isoColor(col);
-  else if (uLayer == 3) {
-    float t = clamp((uSalinity - 38.0) / 7.0, 0.0, 1.0);
-    c = mix(vec3(66.,150.,190.), vec3(206.,176.,96.), t) / 255.;
-    c *= 1.0 - 0.45 * clamp(col / 2600.0, 0.0, 1.0);
+  float a;
+  if (uLayer == 1) {
+    // Le calque géologique lit la colonne d'eau : la nappe y reste opaque.
+    c = isoColor(col); a = 0.94;
   } else {
     float t = pow(clamp(col / 2600.0, 0.0, 1.0), 0.62);
     c = mix(vec3(112.,198.,224.), vec3(10., 36., 76.), t) / 255.;
-    if (col < 40.0) c = mix(c, vec3(198.,228.,214.) / 255., vec3(0.4, 0.4, 0.32));
+    if (uLayer == 3) {
+      float s = clamp((uSalinity - 38.0) / 7.0, 0.0, 1.0);
+      c = mix(c, mix(vec3(66.,150.,190.), vec3(206.,176.,96.), s) / 255., 0.75);
+    }
+    /* Extinction : la lumière qui traverse la colonne d'eau et remonte n'en
+       laisse presque rien passer au-delà de quelques dizaines de mètres. Un
+       plateau à 20 m laisse voir son sédiment, une plaine abyssale non. */
+    a = 1.0 - exp(-col / 22.0);
+    a = clamp(a, 0.10, 0.985);
   }
-  c *= 0.86;   // la nappe reçoit moins que le fond : elle est plane, donc à l'ubac
+  c *= 0.88;   // la nappe est plane : elle ne prend jamais la lumière d'adret
 
   vec3 V = normalize(cameraPosition - vWorld);
   vec3 H = normalize(uSun + V);
-  c += vec3(0.30, 0.34, 0.36) * pow(max(dot(vec3(0.,1.,0.), H), 0.0), 90.0);
-  c = mix(c, c * 0.72 + vec3(0.05, 0.07, 0.09), pow(1.0 - max(V.y, 0.0), 4.0));
+  float spec = pow(max(dot(vec3(0., 1., 0.), H), 0.0), 90.0);
+  c += vec3(0.30, 0.34, 0.36) * spec;
+  float fres = pow(1.0 - max(V.y, 0.0), 4.0);
+  c = mix(c, c * 0.72 + vec3(0.05, 0.07, 0.09), fres);
+  a = max(a + spec * 0.6, fres * 0.85);   // de biais, la surface se voit
 
-  gl_FragColor = vec4(c, 1.0);
+  gl_FragColor = vec4(c, clamp(a, 0.0, 1.0));
 }`;
 
 /* Une nappe par bassin : 1 Atlantique · 2 occidental · 3 oriental · 4 mer Noire. */
@@ -92,6 +102,8 @@ export function makeWater(basinIndex) {
       uSun: { value: new Vector3(-0.5, 0.7071, -0.5).normalize() },
       uLayer: { value: 0 },
     },
+    transparent: true,
+    depthWrite: false,   // le fond est déjà peint : la nappe s'y superpose
   });
   const mesh = new Mesh(geo, mat);
   mesh.frustumCulled = false;

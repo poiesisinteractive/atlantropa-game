@@ -18,11 +18,17 @@
    Une unité de carte vaut CELLKM ≈ 3,37 km. `relief` est exprimé en unités de
    carte par kilomètre de dénivelé réel, dans la tranche dilatée. */
 
+/* Les valeurs par défaut sont contraintes par le haut : la Méditerranée a des
+   côtes qui montent de mille mètres en une cellule de 3,4 km. Au-delà d'une
+   trentaine d'unités par kilomètre, ces pentes réelles deviennent des murs
+   verticaux et la carte se hérisse de lames. Le retrait de la mer, lui, se
+   lit surtout à l'horizontale — un demi-million de kilomètres carrés — et n'a
+   pas besoin qu'on force le trait. */
 export const vscale = {
-  relief: 100,     // unités de carte par km, près de la surface
+  relief: 28,      // unités de carte par km, près de la surface
   H1: 300,         // mètres — hauteur de la tranche dilatée
   H2: 800,         // mètres — échelle du régime logarithmique
-  compress: 0.18,  // rapport des pentes au-delà de H1 (1 = linéaire)
+  compress: 0.45,  // rapport des pentes au-delà de H1 (1 = linéaire)
 };
 
 /* Mètres réels -> unités de carte. Impaire : yOf(−h) = −yOf(h). */
