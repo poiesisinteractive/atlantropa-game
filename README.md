@@ -119,7 +119,9 @@ main, et les frontières sont celles de 1930. C'est un jeu, pas un SIG.
 ## Technique
 
 Vite et modules ES. Deux rendus cohabitent : le **relief three.js** (bouton *3D*), et
-le **Canvas 2D** d'origine, conservé comme étalon visuel.
+le **Canvas 2D** d'origine, conservé comme étalon visuel. Ils diffèrent par le fond —
+pixels reconstruits d'un côté, terrain déplacé au GPU de l'autre — mais partagent
+désormais toutes leurs surcouches vectorielles.
 
 Le terrain ne change jamais de la partie : il part au GPU une fois pour toutes en texture
 de hauteur, et les trois niveaux de bassin ne sont plus que des uniforms. Une image de
@@ -156,6 +158,14 @@ node tools/ui3d-check.mjs  http://localhost:5173/     # les commandes du relief,
 node tools/shot3d.mjs      http://localhost:5173/ . -120 0 55   # captures du relief
 ```
 
+Un piège, si vous éditez pendant qu'un de ces quatre outils tourne : le serveur
+de développement recharge la page à la moindre écriture dans le projet — un
+`npm run build` concurrent suffit — et le test se retrouve devant une page
+revenue à zéro, modale d'ouverture comprise. Les échecs prennent alors des
+formes trompeuses (« élément non visible », « case impossible à décocher »).
+Contre un chantier actif, servez plutôt un bundle figé : `npm run build` puis
+`npm run preview`, et visez ce port-là.
+
 `sim-check` est le filet du modèle : tirage déterministe à graine, donc un échec
 se rejoue à l'identique, et un balayage de toutes les grandeurs à chaque année.
 C'est lui qui aurait signalé la poussière saline restée à `NaN` pendant tout le
@@ -189,7 +199,7 @@ src/core/           le modèle : grille, relief, tour de simulation — sans DOM
   clock.js          vitesses du temps et changement de vitesse
 src/data/           contenu figé : nations, projets, villes, frontières, dem.bin
 src/content/        les 67 dossiers, 30 brèves, événements conditionnels, fins
-src/render/         le rendu Canvas 2D — le fond raster et les surcouches
+src/render/         le rendu Canvas 2D — le fond raster, reconstruit pixel à pixel
   overlays.js       les surcouches vectorielles, partagées par les deux rendus
 src/render3d/       le rendu three.js — terrain, nappes par bassin, échelle verticale
   overlay.js        les mêmes surcouches, projetées par la caméra
@@ -210,14 +220,28 @@ Les deux rendus, eux, lisent le même `S` sans jamais l'écrire ; ils ne
 communiquent avec le modèle que par `core/dirty.js`, deux drapeaux de
 rafraîchissement.
 
-### Ce que la 3D ne fait pas encore
+### Les surcouches, une fois pour les deux rendus
 
-Le portage est en cours, et la vue en relief ne porte que le terrain, l'eau et
-les quatre calques de couleur. Tout ce qui est tracé par-dessus la carte —
-frontières de 1930, toponymes, villes et leur distance à la mer, barrages,
-volcans, failles, isobathes annotées, route maritime, panaches de sel — n'existe
-que dans le rendu 2D, et les deux cases *Frontières* / *Toponymes* sont masquées
-tant qu'on est en relief. C'est pour cela que le Canvas 2D reste l'étalon.
+Frontières de 1930, toponymes, villes et leur distance à la mer, barrages,
+volcans, failles, isobathes annotées, route maritime, panaches de sel : tout
+cela vit dans `render/overlays.js`, qui ne connaît qu'un contexte 2D et une
+fonction changeant une longitude-latitude en pixels. Le rendu plan lui donne sa
+projection plate-carrée ; le rendu en relief lui donne sa caméra. Une correction
+faite là vaut donc pour les deux vues, et les cases *Frontières* et *Toponymes*
+agissent sur les deux.
+
+En relief, deux précautions font toute la différence entre une carte et un
+gribouillis. Chaque point se pose sur la **surface visible** — le maximum du
+terrain et du niveau de son bassin — si bien qu'un port reste sur sa côte à
+mesure que la mer se retire, et que la route maritime flotte au lieu de plonger
+dans la plaine abyssale. Et un point **derrière la caméra** est écarté plutôt
+que projeté : sans cela la division perspective le renvoie de l'autre côté de
+l'écran, et les frontières se replient en éventail dès qu'on incline la vue.
+
+Le dessin coûte de 0,3 à 0,9 ms selon le calque, et n'est refait que si quelque
+chose a bougé — caméra, niveau, calque, année. Reste une limite assumée : les
+étiquettes ne sont pas masquées par le relief, une ville derrière une montagne
+se lit quand même. C'est une surcouche d'affichage, pas un objet de la scène.
 
 ### Données
 

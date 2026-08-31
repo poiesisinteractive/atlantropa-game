@@ -119,8 +119,9 @@ function paneDoc(){
   <b>Géologie</b>, <b>Économie</b> et <b>Sel</b> superposent bathymétrie, volcanisme, routes maritimes, ressources et salinité.<br><br>
   Le bouton <b>3D</b> bascule la carte en relief : molette pour zoomer, glisser pour pivoter, clic droit pour déplacer. Trois réglages y
   gouvernent l'échelle verticale — l'<b>inclinaison</b> de la vue, l'exagération du <b>relief</b>, et la compression des <b>abysses</b>,
-  sans laquelle les deux cents mètres d'assèchement seraient invisibles au fond d'une fosse de cinq mille. Frontières, toponymes et
-  annotations de calque ne sont pour l'instant tracés que dans la vue plane.</p>
+  sans laquelle les deux cents mètres d'assèchement seraient invisibles au fond d'une fosse de cinq mille. Frontières, toponymes, villes,
+  barrages et annotations de calque se tracent dans les deux vues ; en relief ils se posent sur la surface, et suivent donc le rivage
+  à mesure qu'il recule.</p>
   <div class="sec">Sources</div>
   <p style="font-size:10.5px;line-height:1.6;color:#8c949e">Wikipédia « Atlantropa » · W. Voigt, <i>Atlantropa — Weltenbauen am Mittelmeer</i> (1998) ·
   A. Gall, <i>Das Atlantropa-Projekt</i> (1998) · Atlas Obscura · Cabinet Magazine n°10 · Environment &amp; Society Portal.<br><br>

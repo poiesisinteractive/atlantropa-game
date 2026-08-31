@@ -6,6 +6,7 @@ import { uploadTerrain, uploadExposure } from './textures.js';
 import { makeTerrain } from './terrain.js';
 import { makeWater } from './water.js';
 import { vscale, vscaleUniform, yOf } from './scale.js';
+import * as overlay from './overlay.js';
 
 /* La scène. Vue par défaut : zénithale et à champ étroit, donc très proche
    d'une projection orthographique — la carte reste une carte. L'inclinaison
@@ -25,6 +26,9 @@ export function init(container) {
      dernier, le canvas recouvrirait les calques, la légende et les réglages —
      et intercepterait leurs clics, qui partiraient dans OrbitControls. */
   container.insertBefore(canvas, container.firstElementChild.nextSibling);
+  /* Le calque des surcouches se glisse juste derrière, entre le rendu WebGL
+     et les commandes HTML. */
+  overlay.init(container, canvas);
 
   renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
@@ -90,6 +94,7 @@ export function getTilt() {
 export function setVScale(patch) {
   Object.assign(vscale, patch);
   if (terrain) terrain.material.uniforms.uVScale.value.fromArray(vscaleUniform());
+  overlay.invalidate();   // l'échelle verticale déplace aussi les étiquettes
 }
 
 export function resize() {
@@ -99,6 +104,8 @@ export function resize() {
   camera.aspect = Math.max(r.width, 2) / Math.max(r.height, 2);
   camera.updateProjectionMatrix();
   renderer.setSize(Math.max(2, r.width), Math.max(2, r.height), false);
+  overlay.resize(r.width, r.height);
+  overlay.invalidate();
   // Conserver le cadrage : la caméra recule ou avance du même rapport que la
   // distance d'ajustement, sinon un redimensionnement change le zoom.
   if (before > 0 && ready) {
@@ -132,6 +139,19 @@ export function frame() {
 
   controls.update();
   renderer.render(scene, camera);
+  overlay.draw(camera, camera.position.distanceTo(controls.target));
 }
 
 export function domElement() { return renderer?.domElement; }
+
+/* Redessin forcé des surcouches — sert au chronométrage et aux vérifications. */
+export function overlayDraw(force) {
+  if (camera) overlay.draw(camera, camera.position.distanceTo(controls.target), force);
+}
+
+/* Les deux canevas du relief vont et viennent ensemble. */
+export function show(on) {
+  if (renderer) renderer.domElement.hidden = !on;
+  const o = overlay.element(); if (o) o.hidden = !on;
+  if (on) overlay.invalidate();
+}

@@ -79,6 +79,9 @@
      L'ordre dans le DOM fait l'ordre de peinture : le canvas 3D doit donc
      s'insérer juste après le canvas 2D, avant les surcouches. */
   #mapwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+  /* Les surcouches du relief : un canevas 2D par-dessus le WebGL, qui ne doit
+     jamais intercepter un geste destiné à la caméra. */
+  #cv3o{pointer-events:none}
   #view3d{position:absolute;left:10px;top:48px;background:rgba(14,17,20,.88);border:1px solid var(--line);border-radius:4px;padding:8px 10px;font-size:10.5px;color:var(--dim);display:flex;flex-direction:column;gap:6px;width:210px}
   #view3d label{display:grid;grid-template-columns:58px 1fr 34px;align-items:center;gap:7px}
   #view3d input[type=range]{width:100%;height:3px}

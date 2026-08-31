@@ -95,15 +95,18 @@ function setMode3d(on){
   btn3d.classList.toggle('on', on);
   panel3d.hidden = !on;
   cv.hidden = on;
-  const c3 = R3.domElement(); if(c3) c3.hidden = !on;
+  R3.show(on);
 
-  /* Frontières et toponymes n'existent que dans le rendu 2D : plutôt que
-     d'offrir deux cases qui ne feraient rien, on les retire tant que les
-     surcouches ne sont pas portées. */
-  document.getElementById('mapopt').hidden = on;
   document.getElementById('zoomhint').textContent = on
     ? 'molette : zoom · glisser : pivoter · clic droit : déplacer'
     : 'molette : zoom · glisser : déplacer';
+
+  /* Les deux cases valent pour les deux rendus depuis que les surcouches
+     sont portées ; reste à ne pas les laisser sous le panneau du relief,
+     qui occupe le même coin. On mesure plutôt que de coder un décalage en
+     dur : le panneau grandit si on lui ajoute un réglage. */
+  const mapopt = document.getElementById('mapopt');
+  mapopt.style.top = on ? `${panel3d.offsetTop + panel3d.offsetHeight + 6}px` : '';
 
   if(on){ R3.resize(); syncTilt(); } else { dirty.base=true; paint(); }
 }
