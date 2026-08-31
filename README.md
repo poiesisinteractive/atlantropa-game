@@ -52,9 +52,14 @@ des lagunes hypersalines) encadrent l'effondrement de la biodiversité.
   proportionnelle à la pente — la donnée est juste à 3,4 km, le grain manquait.
 - Le **trait de côte dessiné à la main** (lissé par Chaikin) ne sert plus qu'à dire à quel
   bassin appartient une cellule d'eau : c'est lui qui porte la coupure ouest/est de la
-  ligne Cap Bon–Trapani, que nulle donnée ne donnerait. Le relief, lui, décide d'où est
-  la terre — d'où les Cyclades, la Dalmatie et les Baléares, que la carte à la main ne
-  dessinait pas.
+  ligne Cap Bon–Trapani, que nulle donnée ne donnerait. Le relief, lui, retranche : une
+  cellule dessinée en mer que le MNT place au-dessus du zéro redevient terre — d'où les
+  Cyclades, la Dalmatie et les Baléares, que la carte à la main ne dessinait pas.
+  L'inverse n'est pas vrai, et c'est voulu : une cellule dessinée en terre reste terre
+  même sous le niveau de la mer, ce qui garde Qattara (−133 m) et la mer Morte (−430 m)
+  hors du bassin. Corollaire assumé : les mers que le trait ne dessine pas — golfe de
+  Gascogne, mer Rouge — sont de la terre pour le jeu, et le MNT leur donne alors leur
+  vraie profondeur en guise d'altitude.
 - **Ombrage** dérivé du relief, soleil au nord-ouest : en se retirant, la mer découvre
   ses talus, ses canyons et ses plaines abyssales.
 - Conséquence inattendue du relief réel : la simulation est devenue juste. Le volume de
@@ -70,7 +75,7 @@ des lagunes hypersalines) encadrent l'effondrement de la biodiversité.
 ## Événements
 
 Le temps est long — deux siècles, jusqu'à 29 secondes par année. Le rythme vient des
-décisions, pas de l'horloge : **70 dossiers** à trancher, qui mettent le jeu en pause.
+décisions, pas de l'horloge : **67 dossiers** à trancher, qui mettent le jeu en pause.
 
 Diplomatie (Montreux 1936, Bandung 1955, la clause impériale de Mussolini), ingénierie
 (caissons retournés, corrosion saline, les ossements de Gallipoli sous le chantier des
@@ -114,7 +119,9 @@ main, et les frontières sont celles de 1930. C'est un jeu, pas un SIG.
 ## Technique
 
 Vite et modules ES. Deux rendus cohabitent : le **relief three.js** (bouton *3D*), et
-le **Canvas 2D** d'origine, conservé comme étalon visuel.
+le **Canvas 2D** d'origine, conservé comme étalon visuel. Ils diffèrent par le fond —
+pixels reconstruits d'un côté, terrain déplacé au GPU de l'autre — mais partagent
+désormais toutes leurs surcouches vectorielles.
 
 Le terrain ne change jamais de la partie : il part au GPU une fois pour toutes en texture
 de hauteur, et les trois niveaux de bassin ne sont plus que des uniforms. Une image de
@@ -128,24 +135,141 @@ bathymétrie étant fixe, ils ne dépendent que du niveau. C'est 6 000 fois plus
 le balayage des 772 200 cellules qu'elle remplace, à l'identique.
 
 ```sh
-npm run dev      # serveur de développement
-npm run build    # bundle de production
-npm run lint
-
-node tools/fetch-dem.mjs     # recuire le relief depuis les Terrain Tiles
-node tools/smoke.mjs         # non-régression : boot, 40 ans, calques, onglets
-node tools/hypso-check.mjs   # la table hypsométrique contre le balayage complet
-node tools/ui3d-check.mjs    # les commandes du relief, par l'interface réelle
-node tools/shot3d.mjs        # captures du relief
+npm run dev      # serveur de développement — http://localhost:5173/
+npm run build    # bundle de production, dans dist/
+npm run preview  # sert le bundle construit
+npm run lint     # eslint, sur src/ seulement
 ```
+
+Les outils de vérification vivent hors du bundle, dans `tools/`. `sim-check`
+charge le modèle directement dans Node et n'a besoin de rien. Les quatre autres
+pilotent Chromium via `playwright-core`, en réutilisant les navigateurs déjà
+installés sur la machine : il leur faut donc **un serveur déjà lancé**. Ils
+prennent leur cible dans le premier argument, sinon dans `ATL_URL`, sinon sur
+`http://localhost:4173/` — le port de `npm run preview`.
+
+```sh
+npm run check:model    # le modèle seul : 8 parties, NaN et invariants — sans navigateur
+npm run check:smoke    # non-régression : boot, 40 ans, calques, onglets
+npm run check:hypso    # la table hypsométrique contre le balayage complet
+npm run check:ui3d     # les commandes du relief, par l'interface réelle
+npm run deps:check     # vulnérabilités, licences, dépréciations
+
+node tools/fetch-dem.mjs                             # recuire le relief depuis les Terrain Tiles
+node tools/shot3d.mjs http://localhost:4173/ . -120 0 55   # captures du relief
+```
+
+Un piège, si vous éditez pendant qu'un de ces quatre outils tourne : le serveur
+de développement recharge la page à la moindre écriture dans le projet — un
+`npm run build` concurrent suffit — et le test se retrouve devant une page
+revenue à zéro, modale d'ouverture comprise. Les échecs prennent alors des
+formes trompeuses (« élément non visible », « case impossible à décocher »).
+Contre un chantier actif, servez plutôt un bundle figé : `npm run build` puis
+`npm run preview`, et visez ce port-là.
+
+`sim-check` est le filet du modèle : tirage déterministe à graine, donc un échec
+se rejoue à l'identique, et un balayage de toutes les grandeurs à chaque année.
+C'est lui qui aurait signalé la poussière saline restée à `NaN` pendant tout le
+portage — une valeur non finie traverse `clamp()`, échoue à toutes les
+comparaisons et s'affiche « 0 » sans que rien ne proteste.
+
+`fetch-dem` télécharge des tuiles, les met en cache dans `.dem-cache/` et
+réécrit `src/data/dem.bin`. Il n'a besoin d'être relancé que si la grille
+change — auquel cas `hypso-check` doit suivre.
+
+### Intégration continue
+
+`.github/workflows/ci.yml` rejoue tout cela sur chaque PR et chaque push sur
+`main` : `lint` + `build`, puis le modèle, l'interface et le relief en trois
+jobs séparés. Le bundle est **construit une fois** et c'est cet artefact-là que
+les jobs suivants dépaquettent et servent — un artefact testé puis reconstruit
+n'est plus l'artefact testé. `dependency-check.yml` audite l'arbre des
+dépendances, avec un cron du lundi matin pour attraper une CVE publiée contre du
+code que personne n'a touché.
+
+Il n'y a **pas de job de déploiement**, et c'est délibéré : la doctrine du studio
+([`poiesis-deploy`](https://github.com/poiesisinteractive/poiesis-skills)) pose
+qu'un CI n'est pas un chemin de première mise en ligne. Le jour où le jeu sera
+déployé à la main, le job se greffe derrière les portes existantes ; les gardes
+du bundle (anti-fuite, plancher de taille, forme `site/`) sont déjà en place
+pour ça.
+
+Pas de job `typecheck` non plus. Le projet est en JavaScript nu, et la mesure a
+été faite : `tsc --checkJs` y sort 32 erreurs de typage DOM **sans voir** la
+classe de bug qui a réellement mordu ici — une propriété absente lue sur un
+objet, restée `NaN` tout un portage durant — parce qu'un type inféré depuis un
+`.js` reste ouvert là où le même type déclaré en TS est fermé. La porte qui
+attrape celle-là est `check:model`.
+
+Enfin, ces portes ne valent que si `main` les exige : Settings → Branches →
+*Require status checks to pass*, et cocher les quatre jobs.
 
 `ui3d-check` passe délibérément par des clics et des glissers plutôt que par
 `window.__atl` : c'est ce qui manquait au test de fumée, qui appelait les
 fonctions directement et ne pouvait donc pas voir qu'un canvas mal placé dans
 l'ordre du DOM recouvrait les commandes et interceptait leurs clics.
 
-Les deux derniers outils pilotent Chromium via `playwright-core`, en réutilisant les
-navigateurs déjà installés sur la machine.
+### Structure
+
+```
+index.html          la coquille : barre d'état, carte, panneau latéral, journal
+src/main.js         amorçage, boucle d'animation, bascule 2D/3D, câblage des commandes
+src/core/           le modèle : grille, relief, tour de simulation — sans DOM
+  geo.js            projection et constantes de grille (1300 × 594, 3,37 km)
+  shapes.js         traits de côte lissés, ligne de partage ouest/est
+  grid.js           rasterisation, MNT, détail fractal, ombrage
+  hypsometry.js     courbe cumulée des profondeurs — aires et volumes en O(1)
+  sim.js            le tour d'un an : chantiers, niveau, sel, opinion, ports
+  state.js          l'état de partie (S) et les options d'affichage (opts)
+  endgame.js        les six fins : arrête l'horloge et annonce son verdict
+  bus.js            ce que le modèle annonce à qui veut l'entendre
+  journal.js        écrire une ligne de journal (S.log est de l'état, pas de l'écran)
+  clock.js          vitesses du temps et changement de vitesse
+src/data/           contenu figé : nations, projets, villes, frontières, dem.bin
+src/content/        les 67 dossiers, 30 brèves, événements conditionnels, fins
+src/render/         le rendu Canvas 2D — le fond raster, reconstruit pixel à pixel
+  overlays.js       les surcouches vectorielles, partagées par les deux rendus
+src/render3d/       le rendu three.js — terrain, nappes par bassin, échelle verticale
+  overlay.js        les mêmes surcouches, projetées par la caméra
+src/ui/             HUD, onglets, journal, modales, actions exposées à `window`
+  bridge.js         le seul point où le modèle et le DOM se rencontrent
+tools/              MNT hors ligne, modèle sans navigateur, vérifications d'écran
+reference/          la version 2D d'origine, un seul fichier, figée
+```
+
+**Le modèle n'appelle pas l'interface, il annonce.** `core/` et `content/` ne
+touchent jamais au DOM : ils émettent sur `core/bus.js` — une ligne de journal,
+un changement de vitesse, un dossier à trancher, un verdict de fin — et
+`ui/bridge.js` est le seul module abonné. Sans abonné, `emit` ne fait rien, ce
+qui permet à `tools/sim-check.mjs` de faire tourner huit parties complètes dans
+Node, sans navigateur, en une vingtaine de secondes.
+
+Les deux rendus, eux, lisent le même `S` sans jamais l'écrire ; ils ne
+communiquent avec le modèle que par `core/dirty.js`, deux drapeaux de
+rafraîchissement.
+
+### Les surcouches, une fois pour les deux rendus
+
+Frontières de 1930, toponymes, villes et leur distance à la mer, barrages,
+volcans, failles, isobathes annotées, route maritime, panaches de sel : tout
+cela vit dans `render/overlays.js`, qui ne connaît qu'un contexte 2D et une
+fonction changeant une longitude-latitude en pixels. Le rendu plan lui donne sa
+projection plate-carrée ; le rendu en relief lui donne sa caméra. Une correction
+faite là vaut donc pour les deux vues, et les cases *Frontières* et *Toponymes*
+agissent sur les deux.
+
+En relief, deux précautions font toute la différence entre une carte et un
+gribouillis. Chaque point se pose sur la **surface visible** — le maximum du
+terrain et du niveau de son bassin — si bien qu'un port reste sur sa côte à
+mesure que la mer se retire, et que la route maritime flotte au lieu de plonger
+dans la plaine abyssale. Et un point **derrière la caméra** est écarté plutôt
+que projeté : sans cela la division perspective le renvoie de l'autre côté de
+l'écran, et les frontières se replient en éventail dès qu'on incline la vue.
+
+Le dessin coûte de 0,3 à 0,9 ms selon le calque, et n'est refait que si quelque
+chose a bougé — caméra, niveau, calque, année. Reste une limite assumée : les
+étiquettes ne sont pas masquées par le relief, une ville derrière une montagne
+se lit quand même. C'est une surcouche d'affichage, pas un objet de la scène.
 
 ### Données
 

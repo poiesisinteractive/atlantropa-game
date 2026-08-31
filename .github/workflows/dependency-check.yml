@@ -1,0 +1,62 @@
+# =============================================================================
+# Audit de l'arbre de dépendances — vulnérabilités, licences, dépréciations.
+# Doctrine : poiesis-skills/skills/poiesis-deploy/DEPLOY.md §13.6.
+#
+# Workflow à part et non un job de ci.yml : l'intérêt du cron est de remarquer
+# une CVE publiée contre du code que personne n'a touché. Le replier dans le CI
+# principal voudrait dire reconstruire le bundle et rejouer les jobs navigateur
+# chaque lundi pour lire un tableau.
+#
+# Ce qui bloque et ce qui se contente d'avertir se décide dans tools/deps-check.mjs,
+# où la politique est de la donnée lisible — pas éparpillée dans ce YAML. Le code
+# de sortie est la porte.
+# =============================================================================
+name: Dependencies
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Lundi 06:00 UTC : le rapport attend déjà quand la semaine commence.
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: deps-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  dependency-check:
+    name: Audit the dependency tree
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      # `shell: bash` est porteur, pas décoratif : il tourne avec `-o pipefail`,
+      # que le shell par défaut n'a pas. Sans lui, l'échec de `npm ci` serait
+      # masqué par le code de sortie de `tee` et le job rapporterait sur un arbre
+      # qui ne s'est jamais installé.
+      #
+      # Le log est tee-é parce que npm n'imprime ses avis de dépréciation que
+      # pendant l'installation, et nulle part ailleurs.
+      - name: Install and capture the deprecation notices
+        shell: bash
+        run: npm ci 2>&1 | tee npm-ci.log
+
+      - name: Report
+        run: npm run deps:check -- --log npm-ci.log
+
+      # `always()` : le rapport vaut surtout d'être gardé sur les runs où
+      # l'étape ci-dessus a fait échouer le job.
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: dependency-report
+          path: dependency-report.json
+          retention-days: 30

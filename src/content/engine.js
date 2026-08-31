@@ -1,11 +1,10 @@
 import { S } from '../core/state.js';
 import { dirty } from '../core/dirty.js';
-import { fmt } from '../core/utils.js';
+import { emit } from '../core/bus.js';
+import { setSpeed } from '../core/clock.js';
+import { log } from '../core/journal.js';
 import { DECISIONS } from './decisions.js';
 import { AMBIENT } from './ambient.js';
-import { showModal, hideModal } from '../ui/modal.js';
-import { log } from '../ui/log.js';
-import { setSpeedBtn, refresh } from '../ui/hud.js';
 
 /* Décision en cours. Objet plutôt que `let` exporté : la boucle principale
    doit pouvoir lire la valeur courante, pas une copie figée à l'import. */
@@ -34,31 +33,30 @@ function tryDecision(){
   fire(pick);
   evCooldown=1+Math.floor(Math.random()*3);
 }
+/* Un dossier s'ouvre : le temps s'arrête et l'événement est annoncé. Qui
+   l'affiche — une modale, une ligne de console, personne — ne regarde pas
+   le moteur. */
 function fire(e){
   S.fired[e.id]=S.year; dec.cur=e; S.decisions++;
-  speedBefore=S.speed||1; S.speed=0; setSpeedBtn();
-  showModal(`
-    <div class="kicker">${S.year} · ${e.k} · décision n° ${S.decisions}</div>
-    <h2>${e.t}</h2>
-    <p>${e.x}</p>
-    <div style="font-size:11px;color:#8c949e;border-top:1px solid #2c333c;margin-top:14px;padding-top:9px">
-      Trésor ${fmt(S.money,1)} Md · niveau ${fmt(S.levelW,1)} m · soutien ${fmt(S.support,0)} % · opinion ${fmt(S.opinion,0)} % · ${fmt(S.power,0)} GW
-    </div>
-    <div class="choices">${e.o.map((c,i)=>
-      `<button onclick="pickChoice(${i})">${c[0]}${c[1]?`<em>${c[1]}</em>`:''}</button>`).join('')}</div>`);
+  speedBefore=S.speed||1; setSpeed(0);
+  emit('decision', { ev:e });
 }
-window.pickChoice=i=>{
+/* Trancher. L'interface referme sa modale AVANT d'appeler ceci : un effet
+   peut terminer la partie, et la modale de verdict qui s'ouvre alors ne doit
+   pas être refermée dans la foulée. */
+function choose(i){
   const e=dec.cur; if(!e)return;
-  dec.cur=null; hideModal();
+  dec.cur=null;
   log(`<b style="color:#c9a227;position:static">${e.t}</b> — ${e.o[i][0]}`,'big');
   e.o[i][2]();
-  if(!S.ended){ S.speed=speedBefore; setSpeedBtn(); }
-  dirty.ui=true; refresh();
-};
+  if(!S.ended) setSpeed(speedBefore);
+  dirty.ui=true;
+  emit('resolved', { ev:e, choice:i });
+}
 function ambient(){
   const pool=AMBIENT.filter(a=>!S.fired['a_'+a.t] && (!a.y||(S.year>=a.y[0]&&S.year<=a.y[1])) && (!a.c||a.c()));
   if(!pool.length||Math.random()>0.5)return;
   const a=pool[Math.floor(Math.random()*pool.length)];
   S.fired['a_'+a.t]=S.year; log(a.t);
 }
-export { eligible, tryDecision, fire, ambient };
+export { eligible, tryDecision, fire, choose, ambient };

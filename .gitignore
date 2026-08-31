@@ -9,3 +9,8 @@ node_modules/
 # build
 dist/
 .dem-cache/
+
+# sorties des vérifications
+dependency-report.json
+bundle/
+bundle.tgz

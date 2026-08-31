@@ -5,7 +5,10 @@
    Usage : node tools/smoke.mjs [url] [--shot fichier.png] */
 import { chromium } from 'playwright-core';
 
-const url = process.argv[2]?.startsWith('http') ? process.argv[2] : 'http://localhost:5173/';
+/* Cible : premier argument, sinon ATL_URL, sinon le serveur de preview.
+   Un seul défaut pour les quatre outils — ils en avaient trois. */
+const url = process.argv[2]?.startsWith('http') ? process.argv[2]
+  : (process.env.ATL_URL || 'http://localhost:4173/');
 const shotIdx = process.argv.indexOf('--shot');
 const shot = shotIdx > 0 ? process.argv[shotIdx + 1] : null;
 
@@ -14,7 +17,13 @@ const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
 
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+// Le favicon manque et les deux serveurs le rendent en 404 : c'est du bruit,
+// pas une régression, et sans ce filtre tout lancement échouerait.
+const bruit = (t) => /favicon\.ico/.test(t);
+page.on('console', (m) => {
+  if (m.type() === 'error' && !bruit(m.text() + ' ' + (m.location()?.url || '')))
+    errors.push('console: ' + m.text());
+});
 
 await page.goto(url, { waitUntil: 'load' });
 

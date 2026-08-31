@@ -1,5 +1,5 @@
 import { S, nat } from '../core/state.js';
-import { log } from '../ui/log.js';
+import { log } from '../core/journal.js';
 const COND_EVENTS=[
  {id:"gibdone",c:()=>S.built.gib&&!S.flags.gibdone,fn(){S.flags.gibdone=true;
    log("LE DÉTROIT EST FERMÉ. À 3 h 40, les dernières vannes se sont closes. La Méditerranée est désormais une baignoire qui fuit par le ciel.","big");S.support+=14;S.opinion+=16;}},

@@ -141,7 +141,7 @@ function buildGrid(){
 
    Le MNT est échantillonné à 3,37 km : à cette maille, une vallée alpine
    tient dans deux cellules et un canyon sous-marin dans une. La structure
-   est juste, le grain manque. On ajoute donc trois octaves de bruit de
+   est juste, le grain manque. On ajoute donc deux octaves de bruit de
    valeur, d'amplitude proportionnelle à la pente locale — les plaines
    restent des plaines, les talus se rident.
 
@@ -183,8 +183,8 @@ function fractalDetail(){
     const near=Math.min(1, Math.abs(h0[i])/70);
     amp*=near*near*(3-2*near);
 
-    // La base à 7 cellules de longueur d'onde : trois octaves descendent
-    // jusqu'à un peu moins de deux cellules, la limite du maillage.
+    // La base à 7 cellules de longueur d'onde : la seconde octave descend
+    // à trois cellules, la plus fine que le maillage sache porter.
     const d=fbm(x/7,y/7)*amp;
     const h=h0[i]+d;
     if(isLand[i]) elev[i]=h;              // les terres en creux restent en creux

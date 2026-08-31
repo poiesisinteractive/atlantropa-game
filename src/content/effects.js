@@ -1,6 +1,6 @@
 import { S, nat } from '../core/state.js';
 import { clamp, fmt } from '../core/utils.js';
-import { log } from '../ui/log.js';
+import { log } from '../core/journal.js';
 const SUD=["MA","TN","DZ","LY","EG","CG","TR","LV"];
 const RIV=["ES","FR","IT","GR","TR","EG","LY","TN","DZ","YU","LV","MA"];
 const E={

@@ -116,11 +116,17 @@ function paneDoc(){
   <div class="sec">Lecture de la carte</div>
   <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4">Le relief est ombré : en s'asséchant, le fond révèle ses talus, ses canyons et ses
   plaines abyssales. Les frontières sont celles de 1930 (Yougoslavie, Transjordanie, Palestine mandataire, Libye italienne). Les calques
-  <b>Géologie</b>, <b>Économie</b> et <b>Sel</b> superposent bathymétrie, volcanisme, routes maritimes, ressources et salinité.</p>
+  <b>Géologie</b>, <b>Économie</b> et <b>Sel</b> superposent bathymétrie, volcanisme, routes maritimes, ressources et salinité.<br><br>
+  Le bouton <b>3D</b> bascule la carte en relief : molette pour zoomer, glisser pour pivoter, clic droit pour déplacer. Trois réglages y
+  gouvernent l'échelle verticale — l'<b>inclinaison</b> de la vue, l'exagération du <b>relief</b>, et la compression des <b>abysses</b>,
+  sans laquelle les deux cents mètres d'assèchement seraient invisibles au fond d'une fosse de cinq mille. Frontières, toponymes, villes,
+  barrages et annotations de calque se tracent dans les deux vues ; en relief ils se posent sur la surface, et suivent donc le rivage
+  à mesure qu'il recule.</p>
   <div class="sec">Sources</div>
   <p style="font-size:10.5px;line-height:1.6;color:#8c949e">Wikipédia « Atlantropa » · W. Voigt, <i>Atlantropa — Weltenbauen am Mittelmeer</i> (1998) ·
   A. Gall, <i>Das Atlantropa-Projekt</i> (1998) · Atlas Obscura · Cabinet Magazine n°10 · Environment &amp; Society Portal.<br><br>
   La simulation est calibrée sur des ordres de grandeur réels (déficit évaporatoire net ≈ 0,95 m/an, P = ρgQHη, bilan de sel à masse constante).
-  Le trait de côte et la bathymétrie sont schématiques : c'est un jeu, pas un SIG.</p>`;
+  Le relief et la bathymétrie sont réels — <i>Terrain Tiles</i>, AWS Open Data, agrégat de SRTM, NED, ETOPO1 et GEBCO — rééchantillonnés sur une
+  grille de 3,37 km. Le trait de côte, lui, reste dessiné à la main, et les frontières sont celles de 1930 : c'est un jeu, pas un SIG.</p>`;
 }
 export { bar, paneOps, paneEnv, paneGeo, paneDoc };

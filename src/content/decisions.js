@@ -2,7 +2,7 @@ import { S, nat } from '../core/state.js';
 import { dirty } from '../core/dirty.js';
 import { applyRates } from '../core/sim.js';
 import { E, SUD, RIV } from './effects.js';
-import { log } from '../ui/log.js';
+import { log } from '../core/journal.js';
 /* fy : année imposée · y : fenêtre · c : condition · rep : répétable après n ans */
 const DECISIONS=[
 /* ============ DIPLOMATIE ============ */

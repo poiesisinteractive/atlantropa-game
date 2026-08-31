@@ -3,7 +3,9 @@
 import { chromium } from 'playwright-core';
 import path from 'node:path';
 
-const url = process.argv[2] || 'http://localhost:4188/';
+/* Cible : premier argument, sinon ATL_URL, sinon le serveur de preview.
+   Un seul défaut pour les quatre outils — ils en avaient trois. */
+const url = process.argv[2] || process.env.ATL_URL || 'http://localhost:4173/';
 const dir = process.argv[3] || '.';
 const level = Number(process.argv[4] ?? -120);
 const tilts = process.argv.slice(5).map(Number);
@@ -18,7 +20,13 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+// Le favicon manque et les deux serveurs le rendent en 404 : c'est du bruit,
+// pas une régression, et sans ce filtre tout lancement échouerait.
+const bruit = (t) => /favicon\.ico/.test(t);
+page.on('console', (m) => {
+  if (m.type() === 'error' && !bruit(m.text() + ' ' + (m.location()?.url || '')))
+    errors.push('console: ' + m.text());
+});
 
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForFunction(() => !document.getElementById('boot'), null, { timeout: 25000 });
