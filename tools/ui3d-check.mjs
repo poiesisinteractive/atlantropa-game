@@ -122,12 +122,27 @@ const surcouchesKo = surcouches.absent || !surcouches.apresCanvas3d
    La case existait déjà en plan ; ce qu'on vérifie ici, c'est qu'elle agit
    sur le rendu en relief, où rien ne la lisait avant. --- */
 const clipCarte = { x: 0, y: 46, width: 1160, height: 680 };
+
+/* `page.click` et non `page.uncheck` : l'assistant de Playwright clique puis
+   vérifie l'état, et sur cette case il n'y parvient jamais — il reclique en
+   boucle jusqu'au délai d'attente, et repart sur un nombre pair de bascules,
+   c'est-à-dire sans rien avoir changé. Un clic simple, lui, fait exactement ce
+   que fait la main de l'utilisateur, et c'est la doctrine de cet outil. On
+   affirme le changement d'état plutôt que de le supposer : sans cela, deux
+   captures identiques passeraient pour une case sans effet. */
+const bascule = async (sel) => {
+  const avant = await page.locator(sel).isChecked();
+  await page.click(sel);
+  await page.waitForTimeout(400);
+  const apres = await page.locator(sel).isChecked();
+  if (avant === apres) throw new Error(`${sel} n'a pas basculé au clic (resté ${apres})`);
+  return apres;
+};
+
 const avecFrontieres = await page.screenshot({ clip: clipCarte });
-await page.uncheck('#optBorders');
-await page.waitForTimeout(400);
+await bascule('#optBorders');
 const sansFrontieres = await page.screenshot({ clip: clipCarte });
-await page.check('#optBorders');
-await page.waitForTimeout(400);
+await bascule('#optBorders');
 const frontieresInertes = avecFrontieres.equals(sansFrontieres);
 console.log(`  frontières   ${frontieresInertes ? 'SANS EFFET en relief' : 'la case agit sur le rendu en relief'}`);
 
