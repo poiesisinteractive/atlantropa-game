@@ -209,6 +209,37 @@ Enfin, ces portes ne valent que si `main` les exige : Settings → Branches →
 fonctions directement et ne pouvait donc pas voir qu'un canvas mal placé dans
 l'ordre du DOM recouvrait les commandes et interceptait leurs clics.
 
+### Mise en ligne
+
+Proto **statique** : `npm run build` produit `dist/`, que Caddy sert en direct — aucun
+process côté serveur, donc pas de service systemd ni de port. Le jeu charge son MNT par
+`fetch`, il lui faut donc bien un serveur HTTP ; il ne tourne pas en `file://`.
+
+| | |
+|---|---|
+| URL | `https://proto.atlantropa-game.poiesis-interactive.com/` |
+| Chemin sur le VPS | `/opt/atlantropa-game/site` |
+| Profil | **privé** — `basic_auth` + `noindex`. Le critère de recette n° 1 est un **401 sans identifiants** |
+
+La procédure est celle du studio : [`poiesis-deploy`](https://github.com/poiesisinteractive/poiesis-skills),
+`DEPLOY.md` §3 à §8 pour la première mise en ligne (à la main, une seule fois), §9 ensuite.
+Les redéploiements passent par [`deploy.ps1`](deploy.ps1), copie du template canonique dont
+**seul le bloc CONFIG diffère** — build local, contrôle anti-fuite, swap atomique, `.prev`
+conservé, et `-Rollback` :
+
+```powershell
+.\deploy.ps1                 # build + archive + anti-fuite + upload + swap + vérification
+.\deploy.ps1 -SkipBuild      # redéploie le dist/ existant
+.\deploy.ps1 -Rollback       # restaure le déploiement précédent
+```
+
+Une particularité à connaître : le sous-domaine a **deux niveaux**, alors que la convention du
+studio est `APP == label du sous-domaine`. `$App` reste donc `atlantropa-game` (le garde-fou
+refuse un point) et `$SiteUrl` est posée en clair au lieu d'être dérivée.
+
+Le CI n'a **pas** de job de déploiement : §13.9-1 pose qu'un CI n'est pas un chemin de première
+mise en ligne. Les gardes du bundle sont déjà en place pour l'y greffer ensuite.
+
 ### Structure
 
 ```
