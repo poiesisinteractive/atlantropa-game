@@ -6,7 +6,7 @@ import { S, nat } from './state.js';
 import { dirty } from './dirty.js';
 import { PROJECTS } from '../data/projects.js';
 import { CITIES } from '../data/places.js';
-import { log } from '../ui/log.js';
+import { log } from './journal.js';
 import { COND_EVENTS } from '../content/condEvents.js';
 import { ambient, tryDecision } from '../content/engine.js';
 import { endGame } from './endgame.js';

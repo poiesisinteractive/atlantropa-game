@@ -5,7 +5,8 @@ import { paneOps, paneEnv, paneGeo, paneDoc } from './panes.js';
 import { paint } from '../render/paint.js';
 import { applyRates } from '../core/sim.js';
 
-const SPEEDS = [0, 0.035, 0.10, 0.30];        // années par seconde
+/* SPEEDS vit dans core/clock.js : c'est le modèle qui avance le temps.
+   Ici on n'en garde que la traduction à l'écran. */
 const RATE = ["en pause", "1 an ≈ 29 s", "1 an ≈ 10 s", "1 an ≈ 3,3 s"];
 
 function setSpeedBtn(){
@@ -46,4 +47,4 @@ function refresh(){
   if(!opts.mode3d) paint();
 }
 addEventListener('pointerup',()=>{ if(sliderBusy){sliderBusy=false;refresh();} });
-export { SPEEDS, RATE, setSpeedBtn, refresh };
+export { RATE, setSpeedBtn, refresh };

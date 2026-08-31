@@ -1,23 +1,29 @@
 import './style.css';
 
 import { S, opts } from './core/state.js';
+import { SPEEDS, setSpeed } from './core/clock.js';
 import { dirty } from './core/dirty.js';
+import * as bus from './core/bus.js';
+import { endGame } from './core/endgame.js';
+import { DECISIONS } from './content/decisions.js';
 import { buildGrid, setDem } from './core/grid.js';
 import * as grid from './core/grid.js';
 import * as geo from './core/geo.js';
 import demUrl from './data/dem.bin?url';
 import { buildHypsometry } from './core/hypsometry.js';
 import { measure, measureExact, computeStrand, updateExposure, stepYear } from './core/sim.js';
-import { dec } from './content/engine.js';
+import { dec, fire, choose } from './content/engine.js';
 import { LEGENDS } from './ui/legends.js';
-import { log, drawLog } from './ui/log.js';
+import { log } from './core/journal.js';
+import { drawLog } from './ui/log.js';
 import { showModal } from './ui/modal.js';
-import { SPEEDS, setSpeedBtn, refresh } from './ui/hud.js';
+import { setSpeedBtn, refresh } from './ui/hud.js';
 import { paint } from './render/paint.js';
 import { resize } from './render/interaction.js';
 import { cv } from './render/canvas.js';
 import * as R3 from './render3d/scene.js';
 import './ui/actions.js';
+import './ui/bridge.js';
 
 /* Deux rendus cohabitent le temps du portage : l'ancien Canvas 2D, qui reste
    la référence visuelle, et le relief three.js. Le mode vit dans `opts` et
@@ -31,7 +37,10 @@ let last = performance.now(), lastUI = 0, lastMap = 0;
    hypso-check, ui3d-check, shot3d) et au débogage à la console. Aucun code
    de jeu n'en dépend. */
 window.__atl = { S, opts, dirty, dec, stepYear, measure, measureExact, refresh, paint,
-                 R3, set3d: (on) => setMode3d(on), grid, geo };
+                 R3, set3d: (on) => setMode3d(on), grid, geo,
+                 // les coutures du modèle, pour les outils de vérification
+                 bus, setSpeed, endGame, choose, DECISIONS,
+                 fireDecision: (id) => fire(id ? DECISIONS.find(d => d.id === id) : DECISIONS[0]) };
 
 function loop(t){
   const dt=Math.min(0.12,(t-last)/1000); last=t;
@@ -57,7 +66,7 @@ function loop(t){
   if(dirty.ui && t-lastUI>200){ dirty.ui=false; lastUI=t; refresh(); }
   requestAnimationFrame(loop);
 }
-document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>{S.speed=+b.dataset.sp;setSpeedBtn();});
+document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.sp));
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
@@ -71,7 +80,7 @@ document.querySelectorAll('#layers button[data-l]').forEach(b=>b.onclick=()=>{
   if(!opts.mode3d) paint();});   // en 3D, frame() relit opts.layer à chaque image
 document.getElementById('optBorders').onchange=e=>{opts.showBorders=e.target.checked;if(!opts.mode3d)paint();};
 document.getElementById('optLabels').onchange=e=>{opts.showLabels=e.target.checked;if(!opts.mode3d)paint();};
-addEventListener('keydown',e=>{ if(e.code==='Space'){e.preventDefault();S.speed=S.speed?0:1;setSpeedBtn();} });
+addEventListener('keydown',e=>{ if(e.code==='Space'){e.preventDefault();setSpeed(S.speed?0:1);} });
 
 /* ------------------------------------------------------------- RELIEF 3D */
 const panel3d = document.getElementById('view3d');

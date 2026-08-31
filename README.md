@@ -139,8 +139,9 @@ npm run preview  # sert le bundle construit
 npm run lint     # eslint, sur src/ seulement
 ```
 
-Les outils de vérification vivent hors du bundle, dans `tools/`. Quatre d'entre
-eux pilotent Chromium via `playwright-core`, en réutilisant les navigateurs déjà
+Les outils de vérification vivent hors du bundle, dans `tools/`. `sim-check`
+charge le modèle directement dans Node et n'a besoin de rien. Les quatre autres
+pilotent Chromium via `playwright-core`, en réutilisant les navigateurs déjà
 installés sur la machine : il leur faut donc **un serveur déjà lancé**, et l'URL
 en premier argument. Les valeurs par défaut ne sont pas les mêmes partout —
 `:5173` pour `smoke`, `:4188` pour les trois autres — le plus sûr est de la
@@ -148,15 +149,22 @@ passer explicitement.
 
 ```sh
 node tools/fetch-dem.mjs                              # recuire le relief depuis les Terrain Tiles
+node tools/sim-check.mjs                              # le modèle seul : 8 parties, NaN et invariants
 node tools/smoke.mjs       http://localhost:5173/     # non-régression : boot, 40 ans, calques, onglets
 node tools/hypso-check.mjs http://localhost:5173/     # la table hypsométrique contre le balayage complet
 node tools/ui3d-check.mjs  http://localhost:5173/     # les commandes du relief, par l'interface réelle
 node tools/shot3d.mjs      http://localhost:5173/ . -120 0 55   # captures du relief
 ```
 
-`fetch-dem` est le seul à ne pas ouvrir de navigateur : il télécharge des tuiles,
-les met en cache dans `.dem-cache/` et réécrit `src/data/dem.bin`. Il n'a besoin
-d'être relancé que si la grille change — auquel cas `hypso-check` doit suivre.
+`sim-check` est le filet du modèle : tirage déterministe à graine, donc un échec
+se rejoue à l'identique, et un balayage de toutes les grandeurs à chaque année.
+C'est lui qui aurait signalé la poussière saline restée à `NaN` pendant tout le
+portage — une valeur non finie traverse `clamp()`, échoue à toutes les
+comparaisons et s'affiche « 0 » sans que rien ne proteste.
+
+`fetch-dem` télécharge des tuiles, les met en cache dans `.dem-cache/` et
+réécrit `src/data/dem.bin`. Il n'a besoin d'être relancé que si la grille
+change — auquel cas `hypso-check` doit suivre.
 
 `ui3d-check` passe délibérément par des clics et des glissers plutôt que par
 `window.__atl` : c'est ce qui manquait au test de fumée, qui appelait les
@@ -168,29 +176,39 @@ l'ordre du DOM recouvrait les commandes et interceptait leurs clics.
 ```
 index.html          la coquille : barre d'état, carte, panneau latéral, journal
 src/main.js         amorçage, boucle d'animation, bascule 2D/3D, câblage des commandes
-src/core/           le modèle : grille, relief, tour de simulation
+src/core/           le modèle : grille, relief, tour de simulation — sans DOM
   geo.js            projection et constantes de grille (1300 × 594, 3,37 km)
   shapes.js         traits de côte lissés, ligne de partage ouest/est
   grid.js           rasterisation, MNT, détail fractal, ombrage
   hypsometry.js     courbe cumulée des profondeurs — aires et volumes en O(1)
   sim.js            le tour d'un an : chantiers, niveau, sel, opinion, ports
   state.js          l'état de partie (S) et les options d'affichage (opts)
-  endgame.js        les six fins et le tableau de verdict
+  endgame.js        les six fins : arrête l'horloge et annonce son verdict
+  bus.js            ce que le modèle annonce à qui veut l'entendre
+  journal.js        écrire une ligne de journal (S.log est de l'état, pas de l'écran)
+  clock.js          vitesses du temps et changement de vitesse
 src/data/           contenu figé : nations, projets, villes, frontières, dem.bin
-src/content/        les 67 dossiers, 30 brèves, événements conditionnels, effets
-src/render/         le rendu Canvas 2D — étalon visuel, avec toutes les surcouches
+src/content/        les 67 dossiers, 30 brèves, événements conditionnels, fins
+src/render/         le rendu Canvas 2D — le fond raster et les surcouches
+  overlays.js       les surcouches vectorielles, partagées par les deux rendus
 src/render3d/       le rendu three.js — terrain, nappes par bassin, échelle verticale
+  overlay.js        les mêmes surcouches, projetées par la caméra
 src/ui/             HUD, onglets, journal, modales, actions exposées à `window`
-tools/              MNT hors ligne et vérifications pilotées par navigateur
+  bridge.js         le seul point où le modèle et le DOM se rencontrent
+tools/              MNT hors ligne, modèle sans navigateur, vérifications d'écran
 reference/          la version 2D d'origine, un seul fichier, figée
 ```
 
-Les deux rendus lisent le même `S` sans jamais l'écrire, et `core` ne connaît
-aucun des deux : le seul lien est `core/dirty.js`, deux drapeaux de
-rafraîchissement. La cloison n'est pas complète pour autant — `core/sim.js` et
-`core/endgame.js` appellent directement `ui/log`, `ui/modal` et `ui/hud`, si
-bien que le modèle ne tourne pas sans DOM. C'est ce qu'il faudrait défaire en
-premier pour tester la simulation hors navigateur.
+**Le modèle n'appelle pas l'interface, il annonce.** `core/` et `content/` ne
+touchent jamais au DOM : ils émettent sur `core/bus.js` — une ligne de journal,
+un changement de vitesse, un dossier à trancher, un verdict de fin — et
+`ui/bridge.js` est le seul module abonné. Sans abonné, `emit` ne fait rien, ce
+qui permet à `tools/sim-check.mjs` de faire tourner huit parties complètes dans
+Node, sans navigateur, en une vingtaine de secondes.
+
+Les deux rendus, eux, lisent le même `S` sans jamais l'écrire ; ils ne
+communiquent avec le modèle que par `core/dirty.js`, deux drapeaux de
+rafraîchissement.
 
 ### Ce que la 3D ne fait pas encore
 
