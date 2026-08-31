@@ -27,8 +27,9 @@ let inited3d = false;
 
 let last = performance.now(), lastUI = 0, lastMap = 0;
 
-/* Poignée d'inspection : sert au test de fumée (tools/smoke.mjs) et au
-   débogage à la console. Aucun code de jeu n'en dépend. */
+/* Poignée d'inspection : sert aux outils de vérification (tools/smoke.mjs,
+   hypso-check, ui3d-check, shot3d) et au débogage à la console. Aucun code
+   de jeu n'en dépend. */
 window.__atl = { S, opts, dirty, dec, stepYear, measure, measureExact, refresh, paint,
                  R3, set3d: (on) => setMode3d(on), grid, geo };
 
@@ -148,11 +149,11 @@ const breathe=()=>new Promise(r=>setTimeout(r,30));
       abaisser la Méditerranée de <b>200 mètres</b>, en tirer une énergie sans fin et un continent neuf, et souder l'Europe à l'Afrique.</p>
       <p><b>Le nœud du jeu.</b> La puissance d'une turbine vaut <i>débit × hauteur de chute</i>. La hauteur de chute, c'est le vide que vous
       creusez. Pour produire, il faut assécher ; pour assécher, il faut renoncer à produire. Et le sel, lui, ne s'évapore jamais.</p>
-      <p><b>Le temps est long — deux siècles.</b> Il s'écoule lentement et s'arrête de lui-même à chaque décision : soixante-dix dossiers
+      <p><b>Le temps est long — deux siècles.</b> Il s'écoule lentement et s'arrête de lui-même à chaque décision : soixante-sept dossiers
       vous seront soumis, diplomatiques, techniques, financiers, sanitaires, archéologiques. C'est là que se joue la partie, pas dans le
       défilement des années.</p>
       <p style="color:#9aa3ad;font-size:12px">Molette pour zoomer, glisser pour déplacer. <b>Espace</b> met en pause.
-      Les calques <b>Géologie</b>, <b>Économie</b> et <b>Sel</b> changent la lecture de la carte.
+      Les calques <b>Géologie</b>, <b>Économie</b> et <b>Sel</b> changent la lecture de la carte, et le bouton <b>3D</b> la bascule en relief.
       L'onglet <b>Dossier</b> contient la documentation historique.</p>
       <div class="choices">
         <button onclick="startGame()">Ouvrir le chantier du siècle</button>

@@ -17,7 +17,13 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+// Le favicon manque et les deux serveurs le rendent en 404 : c'est du bruit,
+// pas une régression, et sans ce filtre tout lancement échouerait.
+const bruit = (t) => /favicon\.ico/.test(t);
+page.on('console', (m) => {
+  if (m.type() === 'error' && !bruit(m.text() + ' ' + (m.location()?.url || '')))
+    errors.push('console: ' + m.text());
+});
 
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForFunction(() => !document.getElementById('boot'), null, { timeout: 25000 });

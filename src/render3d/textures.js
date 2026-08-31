@@ -12,7 +12,9 @@ import { clamp } from '../core/utils.js';
    heightTex  R32F   altitude en mètres, négative sous le zéro marin.
                      Filtrage linéaire : c'est ce qui donne un trait de côte
                      lisse là où la grille est carrée.
-   maskTex    RGBA8  R = indice de bassin (0 Atlantique exclu … 4 mer Noire)
+   maskTex    RGBA8  R = indice de bassin : 0 terre · 1 Atlantique ·
+                     2 bassin occidental · 3 bassin oriental ·
+                     4 Marmara et mer Noire
                      G = bruit de grain, ramené dans [0,1]
                      B = âge d'exposition, 0 = mer, 255 = émergé depuis 22 ans
                      Filtrage au plus proche : la cellule est l'unité de sens. */

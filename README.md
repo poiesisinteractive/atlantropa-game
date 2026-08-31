@@ -52,9 +52,14 @@ des lagunes hypersalines) encadrent l'effondrement de la biodiversité.
   proportionnelle à la pente — la donnée est juste à 3,4 km, le grain manquait.
 - Le **trait de côte dessiné à la main** (lissé par Chaikin) ne sert plus qu'à dire à quel
   bassin appartient une cellule d'eau : c'est lui qui porte la coupure ouest/est de la
-  ligne Cap Bon–Trapani, que nulle donnée ne donnerait. Le relief, lui, décide d'où est
-  la terre — d'où les Cyclades, la Dalmatie et les Baléares, que la carte à la main ne
-  dessinait pas.
+  ligne Cap Bon–Trapani, que nulle donnée ne donnerait. Le relief, lui, retranche : une
+  cellule dessinée en mer que le MNT place au-dessus du zéro redevient terre — d'où les
+  Cyclades, la Dalmatie et les Baléares, que la carte à la main ne dessinait pas.
+  L'inverse n'est pas vrai, et c'est voulu : une cellule dessinée en terre reste terre
+  même sous le niveau de la mer, ce qui garde Qattara (−133 m) et la mer Morte (−430 m)
+  hors du bassin. Corollaire assumé : les mers que le trait ne dessine pas — golfe de
+  Gascogne, mer Rouge — sont de la terre pour le jeu, et le MNT leur donne alors leur
+  vraie profondeur en guise d'altitude.
 - **Ombrage** dérivé du relief, soleil au nord-ouest : en se retirant, la mer découvre
   ses talus, ses canyons et ses plaines abyssales.
 - Conséquence inattendue du relief réel : la simulation est devenue juste. Le volume de
@@ -70,7 +75,7 @@ des lagunes hypersalines) encadrent l'effondrement de la biodiversité.
 ## Événements
 
 Le temps est long — deux siècles, jusqu'à 29 secondes par année. Le rythme vient des
-décisions, pas de l'horloge : **70 dossiers** à trancher, qui mettent le jeu en pause.
+décisions, pas de l'horloge : **67 dossiers** à trancher, qui mettent le jeu en pause.
 
 Diplomatie (Montreux 1936, Bandung 1955, la clause impériale de Mussolini), ingénierie
 (caissons retournés, corrosion saline, les ossements de Gallipoli sous le chantier des
@@ -128,24 +133,73 @@ bathymétrie étant fixe, ils ne dépendent que du niveau. C'est 6 000 fois plus
 le balayage des 772 200 cellules qu'elle remplace, à l'identique.
 
 ```sh
-npm run dev      # serveur de développement
-npm run build    # bundle de production
-npm run lint
-
-node tools/fetch-dem.mjs     # recuire le relief depuis les Terrain Tiles
-node tools/smoke.mjs         # non-régression : boot, 40 ans, calques, onglets
-node tools/hypso-check.mjs   # la table hypsométrique contre le balayage complet
-node tools/ui3d-check.mjs    # les commandes du relief, par l'interface réelle
-node tools/shot3d.mjs        # captures du relief
+npm run dev      # serveur de développement — http://localhost:5173/
+npm run build    # bundle de production, dans dist/
+npm run preview  # sert le bundle construit
+npm run lint     # eslint, sur src/ seulement
 ```
+
+Les outils de vérification vivent hors du bundle, dans `tools/`. Quatre d'entre
+eux pilotent Chromium via `playwright-core`, en réutilisant les navigateurs déjà
+installés sur la machine : il leur faut donc **un serveur déjà lancé**, et l'URL
+en premier argument. Les valeurs par défaut ne sont pas les mêmes partout —
+`:5173` pour `smoke`, `:4188` pour les trois autres — le plus sûr est de la
+passer explicitement.
+
+```sh
+node tools/fetch-dem.mjs                              # recuire le relief depuis les Terrain Tiles
+node tools/smoke.mjs       http://localhost:5173/     # non-régression : boot, 40 ans, calques, onglets
+node tools/hypso-check.mjs http://localhost:5173/     # la table hypsométrique contre le balayage complet
+node tools/ui3d-check.mjs  http://localhost:5173/     # les commandes du relief, par l'interface réelle
+node tools/shot3d.mjs      http://localhost:5173/ . -120 0 55   # captures du relief
+```
+
+`fetch-dem` est le seul à ne pas ouvrir de navigateur : il télécharge des tuiles,
+les met en cache dans `.dem-cache/` et réécrit `src/data/dem.bin`. Il n'a besoin
+d'être relancé que si la grille change — auquel cas `hypso-check` doit suivre.
 
 `ui3d-check` passe délibérément par des clics et des glissers plutôt que par
 `window.__atl` : c'est ce qui manquait au test de fumée, qui appelait les
 fonctions directement et ne pouvait donc pas voir qu'un canvas mal placé dans
 l'ordre du DOM recouvrait les commandes et interceptait leurs clics.
 
-Les deux derniers outils pilotent Chromium via `playwright-core`, en réutilisant les
-navigateurs déjà installés sur la machine.
+### Structure
+
+```
+index.html          la coquille : barre d'état, carte, panneau latéral, journal
+src/main.js         amorçage, boucle d'animation, bascule 2D/3D, câblage des commandes
+src/core/           le modèle : grille, relief, tour de simulation
+  geo.js            projection et constantes de grille (1300 × 594, 3,37 km)
+  shapes.js         traits de côte lissés, ligne de partage ouest/est
+  grid.js           rasterisation, MNT, détail fractal, ombrage
+  hypsometry.js     courbe cumulée des profondeurs — aires et volumes en O(1)
+  sim.js            le tour d'un an : chantiers, niveau, sel, opinion, ports
+  state.js          l'état de partie (S) et les options d'affichage (opts)
+  endgame.js        les six fins et le tableau de verdict
+src/data/           contenu figé : nations, projets, villes, frontières, dem.bin
+src/content/        les 67 dossiers, 30 brèves, événements conditionnels, effets
+src/render/         le rendu Canvas 2D — étalon visuel, avec toutes les surcouches
+src/render3d/       le rendu three.js — terrain, nappes par bassin, échelle verticale
+src/ui/             HUD, onglets, journal, modales, actions exposées à `window`
+tools/              MNT hors ligne et vérifications pilotées par navigateur
+reference/          la version 2D d'origine, un seul fichier, figée
+```
+
+Les deux rendus lisent le même `S` sans jamais l'écrire, et `core` ne connaît
+aucun des deux : le seul lien est `core/dirty.js`, deux drapeaux de
+rafraîchissement. La cloison n'est pas complète pour autant — `core/sim.js` et
+`core/endgame.js` appellent directement `ui/log`, `ui/modal` et `ui/hud`, si
+bien que le modèle ne tourne pas sans DOM. C'est ce qu'il faudrait défaire en
+premier pour tester la simulation hors navigateur.
+
+### Ce que la 3D ne fait pas encore
+
+Le portage est en cours, et la vue en relief ne porte que le terrain, l'eau et
+les quatre calques de couleur. Tout ce qui est tracé par-dessus la carte —
+frontières de 1930, toponymes, villes et leur distance à la mer, barrages,
+volcans, failles, isobathes annotées, route maritime, panaches de sel — n'existe
+que dans le rendu 2D, et les deux cases *Frontières* / *Toponymes* sont masquées
+tant qu'on est en relief. C'est pour cela que le Canvas 2D reste l'étalon.
 
 ### Données
 

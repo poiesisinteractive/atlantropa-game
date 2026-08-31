@@ -131,8 +131,12 @@ function stepYear(){
   bT*=clamp(m.aW/S.area0,0.4,1);
   S.biodiv=clamp(S.biodiv+(bT-S.biodiv)*0.16,0,100);
 
-  S.land=m.land;   // S.saltArea est tenu à jour par updateExposure()
-  S.dust=clamp(m.salt/9000,0,100)*(S.flags.fixation?0.6:1);
+  /* S.saltArea est tenu à jour par updateExposure(), en fin de tour : la
+     charge de poussière lit donc la croûte telle qu'elle était l'an dernier.
+     Un an de retard sur une croûte qui met plus de six ans à se former ne
+     se voit pas, et cela évite de balayer deux fois les 772 200 cellules. */
+  S.land=m.land;
+  S.dust=clamp(S.saltArea/9000,0,100)*(S.flags.fixation?0.6:1);
 
   computeStrand();
   let dead=0; const lim=S.built.prt?42:16;
