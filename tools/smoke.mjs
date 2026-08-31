@@ -5,7 +5,10 @@
    Usage : node tools/smoke.mjs [url] [--shot fichier.png] */
 import { chromium } from 'playwright-core';
 
-const url = process.argv[2]?.startsWith('http') ? process.argv[2] : 'http://localhost:5173/';
+/* Cible : premier argument, sinon ATL_URL, sinon le serveur de preview.
+   Un seul défaut pour les quatre outils — ils en avaient trois. */
+const url = process.argv[2]?.startsWith('http') ? process.argv[2]
+  : (process.env.ATL_URL || 'http://localhost:4173/');
 const shotIdx = process.argv.indexOf('--shot');
 const shot = shotIdx > 0 ? process.argv[shotIdx + 1] : null;
 

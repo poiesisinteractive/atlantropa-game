@@ -1,0 +1,223 @@
+# =============================================================================
+# CI — portes de qualité. Aucun déploiement.
+#
+# Doctrine : poiesis-skills/skills/poiesis-deploy/DEPLOY.md §13.
+#
+# Ce workflow s'arrête volontairement avant le job `deploy`, et ce n'est pas un
+# oubli : §13.9-1 dit qu'« un CI n'est pas un chemin de première mise en ligne ».
+# Atlantropa n'est pas déployé — pas de sous-domaine, pas de bloc Caddy, pas de
+# profil privé. Le jour où il le sera (§3 à §8, recette = 401 sans identifiants),
+# le job `deploy` de templates/ci/ci-static.yml se greffe ici derrière
+# `needs: [build, model, interface, relief]`, avec sa forced command et ses
+# secrets. Les gardes du bundle ci-dessous sont déjà en place pour ça.
+#
+# Pas de job `typecheck` non plus, et pour une raison mesurée plutôt que par
+# paresse : le projet est en JavaScript nu. `tsc --checkJs` y sort 32 erreurs de
+# typage DOM — et ne voit PAS la classe de bug qui a réellement mordu ici (une
+# propriété absente lue sur un objet, restée NaN pendant tout un portage), parce
+# qu'un type inféré depuis un `.js` reste ouvert là où le même type déclaré en TS
+# est fermé. La porte qui attrape cette classe-là est `model` : sim-check balaye
+# toutes les grandeurs à chaque année de simulation.
+#
+# npm n'est pas épinglé, contrairement à §13.7 : ce pin existe pour le désaccord
+# npm 10/11 sur les peers optionnels, que ce dépôt n'a pas (6 dépendances
+# directes, lockfile v3, `npm ci` vérifié sous npm 10). Symptôme à surveiller si
+# ça change un jour : `npm ci` qui meurt sur « Missing: … from lock file ».
+# =============================================================================
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Un nouveau push annule un run de PR, jamais un run de main.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  # Le serveur que les outils à navigateur interrogent. Les quatre lisent
+  # ATL_URL ; c'est ce qui leur donne une cible unique ici comme sur un poste.
+  ATL_URL: http://localhost:4173/
+
+jobs:
+  # ---------------------------------------------------------------------------
+  build:
+    name: Lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+      # `base: './'` dans vite.config.js — un `base` autre que '/' ou './'
+      # produit un bundle dont tous les assets tombent en 404 servis à la racine
+      # d'un sous-domaine (DEPLOY.md §2.2).
+      - name: Check the entry point and the relative base
+        run: |
+          test -f dist/index.html
+          grep -q 'src="\./assets/' dist/index.html
+
+      # Forme attendue par templates/ci-deploy.sh (KIND=static) : un dossier
+      # `site/` de premier niveau. Rien ne l'expédie encore — c'est ce qui rend
+      # l'ajout du job de déploiement mécanique le jour venu.
+      - name: Package
+        run: |
+          mkdir -p bundle/site
+          cp -R dist/. bundle/site/
+          tar -czf bundle.tgz -C bundle site
+
+      # Gardes du bundle (§13.5). Le contrôle anti-fuite ne coûte rien et prend
+      # l'habitude maintenant plutôt qu'au moment où l'archive part sur le web.
+      - name: Guard against shipping a secret
+        run: |
+          tar -tzf bundle.tgz > contenu.txt
+          if grep -E '\.env|node_modules|\.git/' contenu.txt; then
+            echo "STOP: le bundle contient un secret, node_modules ou le dossier git"; exit 1
+          fi
+
+      # Plancher de taille : le MNT pèse à lui seul 1,5 Mo. En dessous de 1 Mo,
+      # c'est un build tronqué ou le mauvais dossier, pas un jeu.
+      - name: Guard against a truncated bundle
+        run: |
+          taille=$(stat -c%s bundle.tgz)
+          echo "bundle : $taille octets"
+          [ "$taille" -ge 1000000 ] || { echo "STOP: bundle suspect ($taille octets)"; exit 1; }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bundle
+          path: bundle.tgz
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Le modèle seul. Pas de navigateur, pas de serveur, pas d'artefact : ce job
+  # teste le code source de la simulation, pas le bundle — c'est le seul du lot
+  # dont ce soit vrai, et c'est délibéré (le découplage core/ui existe pour ça).
+  model:
+    name: Model — 8 games, non-finite sweep, invariants
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - run: npm ci
+      - run: npm run check:model
+
+  # ---------------------------------------------------------------------------
+  # Interface : on sert L'ARTEFACT CONSTRUIT, jamais un rebuild. Un artefact
+  # testé puis reconstruit n'est plus l'artefact testé (§13.1).
+  interface:
+    name: Interface — boot, 40 years, layers, hypsometry
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - run: npm ci
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: bundle
+      - name: Unpack the bundle under test
+        run: |
+          tar -xzf bundle.tgz
+          rm -rf dist && mv site dist
+
+      - name: Cache the browser
+        id: browser-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install the browser
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright-core install --with-deps chromium
+      # --with-deps installe aussi des bibliothèques système via apt, hors du
+      # dossier caché : un cache-hit en a quand même besoin.
+      - name: Install the browser system libraries
+        if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: npx playwright-core install-deps chromium
+
+      # `nohup … &` et non `… &` : le shell d'une étape se termine à la fin de
+      # l'étape, et un enfant du même groupe de processus peut partir avec lui.
+      # Le serveur doit survivre jusqu'aux étapes suivantes.
+      - name: Serve the built bundle
+        run: |
+          nohup npx vite preview --port 4173 --strictPort > preview.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -sf -o /dev/null "$ATL_URL"; then echo "serveur prêt"; exit 0; fi
+            sleep 1
+          done
+          echo "STOP: le serveur de preview n'a pas répondu"; cat preview.log; exit 1
+
+      - run: npm run check:smoke
+      - run: npm run check:hypso
+
+  # ---------------------------------------------------------------------------
+  # Le relief a son propre job : sous SwiftShader (pas de GPU sur un runner) il
+  # coûte plusieurs minutes, et un échec ici doit se lire sans fouiller le log
+  # d'un job qui ferait aussi autre chose.
+  relief:
+    name: Relief — 3D controls through the real interface
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - run: npm ci
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: bundle
+      - name: Unpack the bundle under test
+        run: |
+          tar -xzf bundle.tgz
+          rm -rf dist && mv site dist
+
+      - name: Cache the browser
+        id: browser-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install the browser
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright-core install --with-deps chromium
+      - name: Install the browser system libraries
+        if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: npx playwright-core install-deps chromium
+
+      # `nohup … &` et non `… &` : le shell d'une étape se termine à la fin de
+      # l'étape, et un enfant du même groupe de processus peut partir avec lui.
+      # Le serveur doit survivre jusqu'aux étapes suivantes.
+      - name: Serve the built bundle
+        run: |
+          nohup npx vite preview --port 4173 --strictPort > preview.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -sf -o /dev/null "$ATL_URL"; then echo "serveur prêt"; exit 0; fi
+            sleep 1
+          done
+          echo "STOP: le serveur de preview n'a pas répondu"; cat preview.log; exit 1
+
+      - run: npm run check:ui3d

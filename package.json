@@ -8,7 +8,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "check:model": "node tools/sim-check.mjs",
+    "check:hypso": "node tools/hypso-check.mjs",
+    "check:smoke": "node tools/smoke.mjs",
+    "check:ui3d": "node tools/ui3d-check.mjs",
+    "deps:check": "node tools/deps-check.mjs"
   },
   "devDependencies": {
     "eslint": "^9.39.0",
@@ -19,5 +24,8 @@
   "dependencies": {
     "globals": "^17.11.0",
     "three": "^0.185.1"
+  },
+  "engines": {
+    "node": ">=22.0.0 <23"
   }
 }

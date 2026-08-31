@@ -14,7 +14,9 @@
    Usage : node tools/ui3d-check.mjs [url] */
 import { chromium } from 'playwright-core';
 
-const url = process.argv[2] || 'http://localhost:4188/';
+/* Cible : premier argument, sinon ATL_URL, sinon le serveur de preview.
+   Un seul défaut pour les quatre outils — ils en avaient trois. */
+const url = process.argv[2] || process.env.ATL_URL || 'http://localhost:4173/';
 const browser = await chromium.launch({
   args: ['--use-gl=angle', '--use-angle=default', '--enable-unsafe-swiftshader',
          '--ignore-gpu-blocklist'],

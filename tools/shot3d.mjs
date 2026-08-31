@@ -3,7 +3,9 @@
 import { chromium } from 'playwright-core';
 import path from 'node:path';
 
-const url = process.argv[2] || 'http://localhost:4188/';
+/* Cible : premier argument, sinon ATL_URL, sinon le serveur de preview.
+   Un seul défaut pour les quatre outils — ils en avaient trois. */
+const url = process.argv[2] || process.env.ATL_URL || 'http://localhost:4173/';
 const dir = process.argv[3] || '.';
 const level = Number(process.argv[4] ?? -120);
 const tilts = process.argv.slice(5).map(Number);

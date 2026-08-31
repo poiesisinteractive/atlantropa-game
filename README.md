@@ -144,18 +144,19 @@ npm run lint     # eslint, sur src/ seulement
 Les outils de vérification vivent hors du bundle, dans `tools/`. `sim-check`
 charge le modèle directement dans Node et n'a besoin de rien. Les quatre autres
 pilotent Chromium via `playwright-core`, en réutilisant les navigateurs déjà
-installés sur la machine : il leur faut donc **un serveur déjà lancé**, et l'URL
-en premier argument. Les valeurs par défaut ne sont pas les mêmes partout —
-`:5173` pour `smoke`, `:4188` pour les trois autres — le plus sûr est de la
-passer explicitement.
+installés sur la machine : il leur faut donc **un serveur déjà lancé**. Ils
+prennent leur cible dans le premier argument, sinon dans `ATL_URL`, sinon sur
+`http://localhost:4173/` — le port de `npm run preview`.
 
 ```sh
-node tools/fetch-dem.mjs                              # recuire le relief depuis les Terrain Tiles
-node tools/sim-check.mjs                              # le modèle seul : 8 parties, NaN et invariants
-node tools/smoke.mjs       http://localhost:5173/     # non-régression : boot, 40 ans, calques, onglets
-node tools/hypso-check.mjs http://localhost:5173/     # la table hypsométrique contre le balayage complet
-node tools/ui3d-check.mjs  http://localhost:5173/     # les commandes du relief, par l'interface réelle
-node tools/shot3d.mjs      http://localhost:5173/ . -120 0 55   # captures du relief
+npm run check:model    # le modèle seul : 8 parties, NaN et invariants — sans navigateur
+npm run check:smoke    # non-régression : boot, 40 ans, calques, onglets
+npm run check:hypso    # la table hypsométrique contre le balayage complet
+npm run check:ui3d     # les commandes du relief, par l'interface réelle
+npm run deps:check     # vulnérabilités, licences, dépréciations
+
+node tools/fetch-dem.mjs                             # recuire le relief depuis les Terrain Tiles
+node tools/shot3d.mjs http://localhost:4173/ . -120 0 55   # captures du relief
 ```
 
 Un piège, si vous éditez pendant qu'un de ces quatre outils tourne : le serveur
@@ -175,6 +176,33 @@ comparaisons et s'affiche « 0 » sans que rien ne proteste.
 `fetch-dem` télécharge des tuiles, les met en cache dans `.dem-cache/` et
 réécrit `src/data/dem.bin`. Il n'a besoin d'être relancé que si la grille
 change — auquel cas `hypso-check` doit suivre.
+
+### Intégration continue
+
+`.github/workflows/ci.yml` rejoue tout cela sur chaque PR et chaque push sur
+`main` : `lint` + `build`, puis le modèle, l'interface et le relief en trois
+jobs séparés. Le bundle est **construit une fois** et c'est cet artefact-là que
+les jobs suivants dépaquettent et servent — un artefact testé puis reconstruit
+n'est plus l'artefact testé. `dependency-check.yml` audite l'arbre des
+dépendances, avec un cron du lundi matin pour attraper une CVE publiée contre du
+code que personne n'a touché.
+
+Il n'y a **pas de job de déploiement**, et c'est délibéré : la doctrine du studio
+([`poiesis-deploy`](https://github.com/poiesisinteractive/poiesis-skills)) pose
+qu'un CI n'est pas un chemin de première mise en ligne. Le jour où le jeu sera
+déployé à la main, le job se greffe derrière les portes existantes ; les gardes
+du bundle (anti-fuite, plancher de taille, forme `site/`) sont déjà en place
+pour ça.
+
+Pas de job `typecheck` non plus. Le projet est en JavaScript nu, et la mesure a
+été faite : `tsc --checkJs` y sort 32 erreurs de typage DOM **sans voir** la
+classe de bug qui a réellement mordu ici — une propriété absente lue sur un
+objet, restée `NaN` tout un portage durant — parce qu'un type inféré depuis un
+`.js` reste ouvert là où le même type déclaré en TS est fermé. La porte qui
+attrape celle-là est `check:model`.
+
+Enfin, ces portes ne valent que si `main` les exige : Settings → Branches →
+*Require status checks to pass*, et cocher les quatre jobs.
 
 `ui3d-check` passe délibérément par des clics et des glissers plutôt que par
 `window.__atl` : c'est ce qui manquait au test de fumée, qui appelait les
