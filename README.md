@@ -187,12 +187,13 @@ n'est plus l'artefact testé. `dependency-check.yml` audite l'arbre des
 dépendances, avec un cron du lundi matin pour attraper une CVE publiée contre du
 code que personne n'a touché.
 
-Il n'y a **pas de job de déploiement**, et c'est délibéré : la doctrine du studio
-([`poiesis-deploy`](https://github.com/poiesisinteractive/poiesis-skills)) pose
-qu'un CI n'est pas un chemin de première mise en ligne. Le jour où le jeu sera
-déployé à la main, le job se greffe derrière les portes existantes ; les gardes
-du bundle (anti-fuite, plancher de taille, forme `site/`) sont déjà en place
-pour ça.
+Il n'y a **pas de job de déploiement**. La première mise en ligne s'est faite à la
+main, comme le veut la doctrine du studio
+([`poiesis-deploy`](https://github.com/poiesisinteractive/poiesis-skills)), et les
+redéploiements passent par `deploy.ps1`. Les automatiser est possible désormais
+(clé dédiée + forced command, §13.9) ; les gardes du bundle (anti-fuite, plancher
+de taille, forme `site/`) sont déjà en place pour greffer le job derrière les
+portes existantes.
 
 Pas de job `typecheck` non plus. Le projet est en JavaScript nu, et la mesure a
 été faite : `tsc --checkJs` y sort 32 erreurs de typage DOM **sans voir** la
