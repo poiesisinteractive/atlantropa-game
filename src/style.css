@@ -65,6 +65,11 @@
   .modal .kicker{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
   .modal p{line-height:1.62;color:#cfd6dd;font-size:13.5px}
   .modal .choices{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+  /* Le chiffrage d'une option sous son intitulé, et non collé derrière : les
+     cartes du prologue en portent toutes un, les dossiers presque tous. */
+  .modal .choices button{text-align:left;padding:8px 11px;line-height:1.35}
+  .modal .choices button em{display:block;margin-top:3px;font-style:normal;font-size:10.5px;
+    letter-spacing:.04em;color:var(--dim)}
   table.verdict{width:100%;border-collapse:collapse;margin:14px 0;font-size:12px}
   table.verdict td,table.verdict th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
   table.verdict th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}

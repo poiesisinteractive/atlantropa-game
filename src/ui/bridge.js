@@ -4,12 +4,17 @@ import { on } from '../core/bus.js';
 import { choose, dec } from '../content/engine.js';
 import { showModal, hideModal } from './modal.js';
 import { setSpeedBtn, refresh } from './hud.js';
+import { showCard, showInstitut } from './intro.js';
 
 /* Le pont. Le modèle annonce, l'interface répond — et c'est le seul endroit
    où les deux se rencontrent. Rien d'autre dans `ui/` n'est abonné, rien
    dans `core/` ne connaît le DOM. */
 
 on('speed', setSpeedBtn);
+
+/* --- le prologue : une carte, puis l'Institut --- */
+on('prologue', (e) => showCard(e));
+on('prologue-done', () => { showInstitut(); refresh(); });
 
 /* --- un dossier s'ouvre --- */
 on('decision', ({ ev }) => {

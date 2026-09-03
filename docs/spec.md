@@ -322,3 +322,80 @@ contact du code, et non par écrit :
   posés au chiffre proposé, réglés au premier `sim-check`.
 - Le texte des charnières et des neuf fins : écrit à la phase concernée,
   relu par le joueur.
+
+## 4. Journal de réalisation
+
+### Phase 1 — le personnage (03/09/2026, branche `claude/phase1-personnage`)
+
+Livré : `core/character.js` (quatre traits, le plan, l'espérance de vie),
+`content/prologue.js` (onze cartes de 1926 à 1930, à variantes tirées au sort),
+l'onglet **Portrait** en phrases, les trois écrans d'ouverture, les neuf fins
+avec leur sélecteur, trois dossiers neufs qui paient les dettes du prologue
+(l'exergue de 1938, le carnet vert, l'invitation de Moscou), les effets
+`E.tr` / `E.vie` / `E.port`, et un `sim-check` qui joue le prologue.
+
+**Un écart avec la spécification, et pourquoi.** Le tour 9 plaçait *La mer
+basse* au point de non-retour de −55 m. La porte du modèle a montré que le
+meilleur cas physique d'une vie d'homme — Gibraltar fermé en 1935, vannes
+closes, argent illimité, tous les ouvrages lancés — s'arrête à **−43 m** :
+0,95 m/an au mieux, soixante ans au plus. Le seuil rendait la fin
+inatteignable et n'en laissait qu'une, *Enterré avec lui*, quoi que fasse le
+joueur.
+
+Ce qui le remplace n'est pas un seuil plus bas mais une autre idée de
+l'irréversibilité : celle des comptes et des traités plutôt que celle de la
+roche. *La mer basse* demande un ouvrage qui descend (≤ −12 m), un Institut
+soutenu (≥ 60) et un consortium qui tient (≥ 6 nations) ; *Le lac des autres*
+est le même ouvrage sans la maîtrise ; *Une plaine de sel* l'emporte sur les
+deux dès que la poussière ou les ports morts passent leurs seuils. Le point de
+non-retour narratif descend à −35 m, atteignable dans une bonne partie.
+`sim-check` rejoue désormais le meilleur cas à chaque lancement et échoue si
+le bilan le plus favorable redevient inatteignable.
+
+⏳ Reste ouvert pour la phase 2 : les fins `confisque`, `courant`, `atome` et
+`passeport` attendent les drapeaux de leurs systèmes (saisie d'État, course,
+clause soviétique) et ne peuvent pas encore tomber.
+
+### Décision de calibrage (03/09/2026)
+
+L'espérance longue est conservée : mort attendue en 1990, fenêtre 1975-2000,
+soit un homme de 70 à 95 ans. C'est vingt ans de plus que Sörgel, et c'est
+délibéré — la course avec l'URSS a besoin d'un porteur vivant en 1986 et en
+1989.
+
+### Phase 2 — financement et géopolitique (03/09/2026, branche `claude/phase2-financement`)
+
+Livré : `core/ledger.js` (clauses signées, émissions, taux), `content/backers.js`
+(dix bailleurs — vingt dossiers, offre plus échéance, plus la saisie de 1944),
+l'onglet **Registre**, le service de la dette dans le tour de simulation, la
+ligne « Grand livre » au verdict, et l'extension de `sim-check` au cycle
+complet d'une émission.
+
+**Ce qui a été décidé au contact du code.**
+
+Les bailleurs ne sont pas un système à part : ce sont des dossiers ordinaires,
+concaténés à `DECISIONS`. Ils héritent ainsi de la pause du temps, du tirage
+pondéré, du journal et de la modale sans une ligne de code d'interface. Seule
+la trace est nouvelle. Le moteur a dû apprendre une chose : une échéance à
+date fixe porte désormais une condition (`c`) et une fenêtre de grâce
+(`fyEnd`, trois ans par défaut) — sans quoi la note d'une clause jamais signée
+se présenterait quand même.
+
+Chiffres des obligations, conformes au tour 9 : montants 10 / 25 / 40 Md,
+durées 15 ou 25 ans, taux de base 4 %, +1 point par tranche de 20 de soutien
+manquant sous 70, −1,5 avec garantie, +0,5 pour le long terme, +0,5 au-delà de
+40 Md ; plancher 2 %, plafond 12 %. Deux lignes vives au maximum — c'est la
+seule règle qui empêche la fuite en avant, et elle est volontairement brutale.
+Mesuré : 25 Md sur 15 ans coûtent 6,50 % à soutien 20 et 4,00 % à soutien 90.
+
+Deux fins de la liste des neuf deviennent atteignables : *Le passeport*, par la
+clause soviétique de 1936, et *L'ouvrage confisqué*, par la clause italienne
+tenue jusqu'en 1944 sur un chantier de Sicile que la Wehrmacht réquisitionne.
+Les deux dernières — *Le courant de l'Europe* et *L'atome a gagné* — attendent
+la course.
+
+⏳ Le joueur peut emprunter, jamais l'automate de `sim-check` : émettre est une
+action d'interface et non un dossier. Le cycle des obligations est donc éprouvé
+à part, hors partie. Si la phase 4 donne à la course un besoin d'argent
+automatique, il faudra un dossier « émission » pour que les parties simulées
+empruntent aussi.

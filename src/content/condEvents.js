@@ -34,6 +34,8 @@ const COND_EVENTS=[
    log("La circulation thermohaline se dérègle : sans l'eau salée méditerranéenne qui plonge à Gibraltar, la dérive nord-atlantique faiblit. Les hivers britanniques s'allongent — l'inverse exact de ce qu'avait promis Sörgel.","big");S.opinion-=14;nat.UK.att-=20;}},
  {id:"rain",c:()=>S.levelW<-90&&!S.flags.rain,fn(){S.flags.rain=true;
    log("Les pluies manquent. La mer était la chaudière humide de l'Europe du Sud ; réduite d'un cinquième, elle n'alimente plus les dépressions d'automne. Sécheresse d'Andalousie au Liban.","bad");S.opinion-=12;S.refugees+=4;}},
+ {id:"cible",c:()=>S.built.gib&&S.levelW<=S.plan.target&&!S.flags.cible,fn(){S.flags.cible=true;
+   log(`LA CIBLE EST ATTEINTE. ${-S.plan.target} mètres : le chiffre que vous aviez écrit avant de connaître Sörgel. L'Institut n'avait jamais promis d'y arriver de votre vivant.`,'big');S.support+=12;S.opinion+=10;}},
  {id:"irrev",c:()=>S.levelW<-55&&!S.flags.irrev,fn(){S.flags.irrev=true;
    log("Note interne de l'Institut : rouvrir Gibraltar provoquerait une réinondation de type zancléen. Nous avons franchi le point de non-retour.","big");}}
 ];

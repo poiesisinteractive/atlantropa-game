@@ -9,6 +9,9 @@ import { CITIES } from '../data/places.js';
 import { log } from './journal.js';
 import { COND_EVENTS } from '../content/condEvents.js';
 import { ambient, tryDecision } from '../content/engine.js';
+import { pickEnding } from '../content/endings.js';
+import { deathYear, lifeYear } from './character.js';
+import { bondsDue } from './ledger.js';
 import { endGame } from './endgame.js';
 
 /* Le débit turbiné compense une part du déficit : la mer descend d'autant moins. */
@@ -80,7 +83,9 @@ function stepYear(){
   let build=0;
   for(const p of PROJECTS){
     if(!S.active[p.id]||S.built[p.id])continue;
-    const per=p.cost/p.yrs*S.costMul;
+    // `projMul` porte l'ouvrage-cœur du prologue : Morev l'a dessiné lui-même,
+    // il coûte 15 % de moins.
+    const per=p.cost/p.yrs*S.costMul*(S.projMul[p.id]||1);
     if(S.money-build < per){ if(S.year%4===0)log(`Chantier « ${p.n} » au ralenti : les caisses sont vides.`,'bad'); continue; }
     if(frozen)continue;
     build+=per; S.prog[p.id]+=1/p.yrs;
@@ -113,7 +118,10 @@ function stepYear(){
   if(S.built.cit) inc+=2.4;
   S.agriYield = S.built.agr ? (S.flags.agrFail? Math.max(0,S.agriYield-0.35) : Math.min(3.2,S.agriYield+0.3)) : 0;
   inc=(inc+S.agriYield)*S.incomeMul;
-  const dette = S.year<S.debtUntil ? S.debtService : 0;
+  /* Deux dettes : l'ancienne (`E.dette`, un emprunt forfaitaire attaché à
+     certains dossiers) et les émissions du registre, qui s'éteignent d'elles-
+     mêmes à leur terme. */
+  const dette = (S.year<S.debtUntil ? S.debtService : 0) + bondsDue();
   const exp = build+0.4+dette+(S.built.gib?1.1:0)+(S.built.sic?0.7:0)+(S.built.cgo?0.9:0)+S.refugees*0.18+S.deadPorts*0.22;
   S.income=inc; S.spend=exp; S.money+=inc-exp;
   if(S.money<-12) { endGame('faillite'); return; }
@@ -158,10 +166,12 @@ function stepYear(){
   for(const e of COND_EVENTS) if(e.c()) e.fn();
   if(S.year%10===0) log(`— ${S.year} — niveau ${fmt(S.levelW,1)} m · ${fmt(S.power,0)} GW · ${fmt(S.land,0)} km² émergés · salinité ${fmt(Math.max(S.salW,S.salE),1)} g/L · biodiversité ${fmt(S.biodiv,0)} %`,'big');
 
-  if(S.levelW<=-155) endGame('victory');
-  else if(S.support<8&&S.built.gib) endGame('abandon');
+  /* Les trois arrêts, puis la mort. L'ordre compte : une partie qui casse
+     casse, même l'année où Morev devait mourir. */
+  lifeYear();
+  if(S.support<8&&S.built.gib) endGame('abandon');
   else if(S.opinion<6) endGame('revolte');
-  else if(S.year>=2140) endGame('siecle');
+  else if(S.year>=deathYear()) endGame(pickEnding());
 
   updateExposure();
   dirty.ui=true;

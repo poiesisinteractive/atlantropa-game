@@ -20,9 +20,15 @@ function eligible(e){
 }
 function tryDecision(){
   if(S.ended||dec.cur)return;
-  // 1. événements historiques imposés
+  /* 1. événements historiques imposés. Une échéance de clause porte en plus
+     une condition — elle ne se présente que si la clause a été signée — et
+     une fenêtre de grâce : la note peut revenir un peu après la date, jamais
+     dix ans plus tard. */
   for(const e of DECISIONS){
-    if(e.fy && S.fired[e.id]===undefined && S.year>=e.fy){ fire(e); return; }
+    if(!e.fy || S.fired[e.id]!==undefined || S.year<e.fy) continue;
+    if(S.year > (e.fyEnd ?? e.fy+3)) continue;
+    if(e.c && !e.c()) continue;
+    fire(e); return;
   }
   if(evCooldown>0){ evCooldown--; return; }
   const pool=DECISIONS.filter(eligible);

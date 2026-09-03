@@ -39,6 +39,49 @@ const boot = await page.evaluate(() => ({
   panePresent: document.getElementById('pane-ops').innerHTML.length,
 }));
 
+/* Le prologue, joué à travers la vraie interface : onze cartes, un clic
+   chacune. C'est la seule façon d'éprouver la chaîne complète — le bus, la
+   modale, les effets sur le personnage — telle qu'un joueur la parcourt. */
+await page.click('#ov button');                       // « Commencer en 1926 »
+let cartes = 0;
+while (cartes < 20) {
+  const kicker = await page.textContent('#ovm .kicker');
+  if (!/carte \d+ sur/.test(kicker)) break;
+  await page.click('#ovm .choices button');
+  cartes++;
+}
+const perso = await page.evaluate(() => ({
+  cartes: window.__atl.S.portrait.length,
+  an: window.__atl.S.year,
+  traits: window.__atl.S.traits,
+  plan: window.__atl.S.plan,
+  institut: /Institut Atlantropa/.test(document.getElementById('ovm').textContent),
+}));
+if (cartes !== 11) errors.push(`prologue : ${cartes} cartes jouées, 11 attendues`);
+if (perso.an !== 1930) errors.push(`prologue : le jeu commence en ${perso.an}`);
+if (!perso.institut) errors.push("prologue : la modale de l'Institut ne s'ouvre pas");
+if (perso.cartes !== 11) errors.push(`portrait : ${perso.cartes} phrases pour 11 cartes`);
+
+await page.evaluate(() => window.hideModal());        // la modale couvre les onglets
+await page.click('#tabs button[data-tab="port"]');
+const portrait = await page.evaluate(() => document.getElementById('pane-port').textContent);
+if (!/Alexe/.test(portrait) || portrait.length < 400)
+  errors.push(`portrait : panneau trop court (${portrait.length} caractères)`);
+
+/* Le registre : emprunter par l'interface, et vérifier que le service pèse.
+   C'est la seule action d'argent que le joueur déclenche lui-même. */
+await page.click('#tabs button[data-tab="reg"]');
+const avantEmprunt = await page.evaluate(() => window.__atl.S.money);
+await page.click('#pane-reg .choices button, #pane-reg button');
+const registre = await page.evaluate(() => ({
+  tresor: window.__atl.S.money,
+  lignes: window.__atl.S.bonds.length,
+  service: window.__atl.S.bonds[0]?.service ?? 0,
+}));
+if (registre.lignes !== 1) errors.push(`registre : ${registre.lignes} émission(s) après un clic`);
+if (!(registre.tresor > avantEmprunt)) errors.push("registre : l'émission n'a pas crédité le trésor");
+if (!(registre.service > 0)) errors.push('registre : service de la dette nul');
+
 // Fermer la modale d'ouverture, forcer Gibraltar et faire tourner 40 ans
 // pour éprouver la simulation, le rendu des calques et les événements.
 await page.evaluate(() => {
@@ -71,7 +114,7 @@ for (const l of ['geo', 'eco', 'sel', 'terrain']) {
   await page.click(`#layers button[data-l="${l}"]`);
   await page.waitForTimeout(120);
 }
-for (const t of ['env', 'geo', 'doc', 'ops']) {
+for (const t of ['env', 'geo', 'reg', 'port', 'doc', 'ops']) {
   await page.click(`#tabs button[data-tab="${t}"]`);
   await page.waitForTimeout(80);
 }
@@ -80,6 +123,8 @@ if (shot) await page.screenshot({ path: shot });
 await browser.close();
 
 console.log('boot   ', boot);
+console.log('prologue', perso);
+console.log('registre', registre);
 console.log('après  ', after);
 if (errors.length) {
   console.error('\nERREURS :');
