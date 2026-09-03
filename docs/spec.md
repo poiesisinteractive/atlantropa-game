@@ -126,12 +126,66 @@ comme aujourd'hui. Le **défaut** est la `faillite` existante. Rien de neuf dans
 l'interface au-delà d'une ligne *Émettre* dans l'onglet Trésorerie. ⏳ Chiffres
 à poser au premier prototype.
 
+### Tour 5 — la carte, la course, l'ordre (03/09/2026)
+
+| Question | Décision | Conséquences |
+|---|---|---|
+| Première pierre | **Question déplacée.** Plutôt qu'une condition de passage, le joueur veut *l'histoire alternative* : ce que le projet aurait pu changer à la géopolitique. C'est un **moteur supplémentaire**, à itérer (tour 6). | Aujourd'hui l'Histoire est un rail : six dossiers à année imposée (`fy:` 1939, 1952, 1954, 1956, 1962, 1973) que le projet subit sans jamais les infléchir. Le moteur inverse le sens : le monde *répond* au projet. Proposition ci-dessous. |
+| Interactions sur la carte | **Villes, pays, conflits, chantiers** — les quatre. | Villes : coordonnées existantes. Chantiers : `S.active`/`S.prog` existent, il manque le clic. Pays : `nat[].att` existe, pas de polygone. Conflits : donnée nouvelle, produite par le moteur d'histoire alternative — la phase 3 en dépend. |
+| La course avec l'URSS | **Propagande, renseignement, main tendue de Moscou, pari nucléaire** — et *autre chose*, non précisé. ⏳ À nommer au tour 6. | Quatre leviers, deux par camp : la propagande et le pari nucléaire sont ce que Morev *fait* ; le renseignement et la main tendue sont ce que Moscou *lui fait*. |
+| Ordre de réalisation | **1 → 2 → 4 → 3.** Personnage, financement, course, carte enrichie. | Chaque phase = une PR jouable. La carte enrichie ferme la marche parce qu'elle consomme les données des trois autres (conflits, bailleurs, course). |
+
+#### Le moteur d'histoire alternative — proposition
+
+Ce qui existe : `nat[]` porte quatorze pays avec une attitude (`att`) et un poids
+(`ct`) ; six dossiers d'Histoire tombent à date fixe ; le projet n'a d'effet
+que sur les attitudes. Le monde ne bouge jamais.
+
+Ce qui manque : que la Méditerranée fermée *change la guerre*, que la mer
+abaissée *change Suez*, que les gigawatts *changent 1973*. Trois couches :
+
+1. **Des charnières.** Six à huit dates de l'Histoire deviennent des
+   *embranchements* : chacune a son issue historique (celle qu'on connaît,
+   quand le projet est trop petit pour peser) et une ou deux **divergences**
+   écrites, déclenchées par l'état du projet à cette date. La divergence a un
+   prix et un visage : la digue devient un objectif de guerre, l'écluse de
+   Suez devient *votre* Suez, l'embargo de 1973 ne mord pas l'Europe.
+2. **Des postures.** L'attitude d'un pays se lit en posture — allié, neutre,
+   hostile, en guerre — et les postures produisent les **conflits** de la
+   carte (phase 3). Un conflit est un pays en guerre contre un autre, ou
+   contre l'ouvrage.
+3. **Une chronologie.** Un onglet où la frise réelle se barre au fur et à
+   mesure des divergences : le joueur *voit* l'Histoire qu'il a tordue. Un
+   indice de divergence alimente les fins.
+
+Charnières candidates, avec ce que le projet doit avoir fait pour les faire
+dévier :
+
+| Date | Histoire | Divergence si… | Ce que ça coûte |
+|---|---|---|---|
+| 1940-43 | Mers el-Kébir, Malte, l'Afrika Korps | Gibraltar fermé ou en chantier : la Méditerranée est un lac, la Regia Marina ne sert à rien ; la digue Sicile–Tunisie ravitaille Rommel par la route | La digue est bombardée, occupée, ou tenue par le camp qui gagne |
+| 1943-45 | L'énergie du Reich | Des gigawatts livrés à l'Allemagne avant 1943 | La guerre dure plus longtemps : la divergence la plus sombre du jeu, et l'échéance du bailleur *Reich* |
+| 1948-52 | Plan Marshall | Une Europe qui produit déjà son courant | Le chèque est plus petit, la clause plus lourde ; *Atoms for Peace* arrive plus tôt |
+| 1954-62 | Guerre d'Algérie | Des terres émergées et des colons sur la rive sud (le dossier *colons* existe) | Le front se déplace sur *vos* terres ; ou l'Algérie devient copropriétaire |
+| 1956 | Suez | La mer est déjà en dessous du canal : Suez est une écluse, et elle est à vous | Nasser nationalise *votre* écluse ; la crise se joue contre l'Institut |
+| 1973 | L'embargo | `S.power` suffisant pour l'Europe du Sud | L'OPEP ne mord pas ; le cartel vous vise ; le dossier *oil* change de sens |
+| 1975 | Mort de Franco | Le barrage est en Espagne : l'Espagne est une puissance | Madrid réclame l'ouvrage ; le *mémorandum espagnol* présente sa note |
+| 1989-91 | Chute du mur | Le courant de l'Est vient de la Méditerranée (clause soviétique) | Qui garde les lignes ? La fin de la course se joue là |
+
+⏳ Tout ceci est ouvert : nature du moteur (scripté, systémique, ou hybride),
+charnières retenues, où le joueur voit la divergence, et si le monde peut se
+retourner *contre* le projet.
+
 ## 2. Questions ouvertes ⏳
 
 - Les fins à la mort : noms, textes, seuils.
 - Chiffrage du coût de vie des cartes.
-- Acte I : la condition de la première pierre ; chiffres des obligations.
-- Interactions sur la carte : villes (coordonnées existantes), pays (pas de
-  polygones aujourd'hui), conflits (donnée nouvelle).
+- Acte I : chiffres des obligations. (La première pierre est devenue une
+  question du moteur d'histoire alternative.)
+- Moteur d'histoire alternative : nature, charnières, affichage, retournement
+  du monde contre le projet (tour 6).
+- La course : le cinquième levier, « autre chose », non nommé.
+- Interactions sur la carte : pays (pas de polygones aujourd'hui), conflits
+  (produits par le moteur d'histoire alternative).
 - Adaptation de `sim-check` : il force Gibraltar et saute la négociation ; il
   devra jouer le prologue ou démarrer en acte II.
