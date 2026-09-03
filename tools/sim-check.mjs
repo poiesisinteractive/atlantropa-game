@@ -58,6 +58,8 @@ const { measure, measureExact, computeStrand, updateExposure, stepYear } = await
 const { dec, choose } = await import('../src/content/engine.js');
 const { playPrologue } = await import('../src/content/prologue.js');
 const { canIssue, issue, bondsDue, liveBonds, bondRate } = await import('../src/core/ledger.js');
+const { sovietGW } = await import('../src/core/race.js');
+const { pickEnding } = await import('../src/content/endings.js');
 const { deathYear } = await import('../src/core/character.js');
 const { on } = await import('../src/core/bus.js');
 const { setSpeed } = await import('../src/core/clock.js');
@@ -168,6 +170,8 @@ for (let s = 1; s <= SEEDS; s++) {
     graine: s, fin: S.ended ?? '—', an: S.year, mort,
     coeur: S.plan.core, cible: S.plan.target,
     clauses: S.ledger.length, emprunts: S.bonds.length,
+    pression: S.pressure.toFixed(0), contrainte: S.strain.toFixed(0),
+    URSS: (S.sovietGW || 0).toFixed(0),
     niveau: S.levelW.toFixed(0), GW: S.power.toFixed(0),
     'km²': Math.round(S.land), sel: S.salW.toFixed(1),
     poussière: S.dust.toFixed(0), biodiv: S.biodiv.toFixed(0),
@@ -223,6 +227,48 @@ const meilleur = { an: S.year, niveau: +S.levelW.toFixed(1), fin: S.ended };
 if (S.ended !== 'merbasse')
   failures.push(`meilleur cas : fin « ${S.ended} » au lieu de « merbasse » à ${meilleur.niveau} m — un bilan est devenu inatteignable`);
 
+/* ----------------------------------------------- la course est-elle jouable ?
+
+   Trois affirmations, mesurées plutôt que supposées : un homme qui garde les
+   vannes closes n'est pas jugé sur la course ; un homme qui ouvre les vannes
+   assez tôt et équipe son ouvrage la gagne ; et celui qui a acheté des
+   réacteurs ne la gagne jamais proprement, même en tête. */
+function finDeCourse({ turbine, powerMul, atom = 0, an = 1990 }) {
+  reset(11);
+  S.year = an; S.built.gib = true; S.prog.gib = 1; S.built.dard = true; S.built.sic = true;
+  S.levelW = -36; S.levelE = -36; S.turbine = turbine; S.powerMul = powerMul; S.atomGW = atom;
+  S.flags.course = true; S.support = 70; S.opinion = 60;
+  for (const k in nat) { nat[k].mem = true; }
+  S.sovietGW = sovietGW(an);
+  S.power = 0.592 * turbine * 36 * 1.06 * 1.12 * powerMul + atom;
+  return { fin: pickEnding(), vous: +S.power.toFixed(1), eux: +S.sovietGW.toFixed(1) };
+}
+const vannesCloses = finDeCourse({ turbine: 0, powerMul: 1 });
+const gagnee = finDeCourse({ turbine: 1, powerMul: 1.12 * 1.16 * 1.14 });
+const achetee = finDeCourse({ turbine: 1, powerMul: 1.12 * 1.16 * 1.14, atom: 4.5 });
+S.flags.parinuke = true;
+const acheteeFin = pickEnding();
+if (vannesCloses.fin === 'courant' || vannesCloses.fin === 'atome')
+  failures.push(`course : vannes closes jugées sur la course (« ${vannesCloses.fin} »)`);
+if (gagnee.fin !== 'courant')
+  failures.push(`course : ${gagnee.vous} GW contre ${gagnee.eux} donnent « ${gagnee.fin} » et non « courant »`);
+if (acheteeFin !== 'atome')
+  failures.push(`course : gagnée avec des réacteurs, la fin est « ${acheteeFin} » et non « atome »`);
+/* Les trois Tchernobyl couvrent-ils toute la jauge, sans trou ni recouvrement ?
+   Le moteur tire le premier dossier éligible à 1986 : deux dossiers éligibles
+   en même temps, et l'un des deux ne sortirait jamais. */
+const { DECISIONS: TOUS } = await import('../src/content/decisions.js');
+const tchernobyls = TOUS.filter((d) => d.fy === 1986);
+if (tchernobyls.length !== 3) failures.push(`Tchernobyl : ${tchernobyls.length} dossiers pour trois issues`);
+reset(13); S.flags.course = true;
+for (let pr = 0; pr <= 100; pr += 5) {
+  S.pressure = pr;
+  const n = tchernobyls.filter((d) => d.c()).length;
+  if (n !== 1) failures.push(`Tchernobyl : ${n} issue(s) éligible(s) à pression ${pr}`);
+}
+
+const course = { closes: vannesCloses.fin, gagnee: `${gagnee.vous} contre ${gagnee.eux} → ${gagnee.fin}`, achetee: acheteeFin };
+
 /* ----------------------------------------------- la table contre le balayage */
 S.levelW = -120; S.levelE = -120;
 const a = measureExact(), b = measure();
@@ -235,7 +281,8 @@ if (ecart > 0.005) failures.push(`courbe hypsométrique : écart de ${(ecart * 1
 /* ------------------------------------------------------------------ sortie */
 console.log(`relief cuit en ${tGrid} ms · ${SEEDS} parties, prologue compris, ${YEARS} ans au plus\n`);
 console.table(rows);
-console.log(`\nobligations : 25 Md sur 15 ans coûtent ${obligations.cher} % à soutien 20, ${obligations.bon} % à soutien 90`);
+console.log(`\ncourse : vannes closes → « ${course.closes} » · ${course.gagnee} · gagnée avec des réacteurs → « ${course.achetee} »`);
+console.log(`obligations : 25 Md sur 15 ans coûtent ${obligations.cher} % à soutien 20, ${obligations.bon} % à soutien 90`);
 console.log(`meilleur cas physique : ${meilleur.niveau} m en ${meilleur.an}, fin « ${meilleur.fin} »`);
 console.log(`courbe hypsométrique à −120 m : écart ${(ecart * 100).toFixed(4)} % avec le balayage complet`);
 console.log(`total : ${Date.now() - t0} ms, sans navigateur`);

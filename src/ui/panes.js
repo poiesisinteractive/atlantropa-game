@@ -1,6 +1,7 @@
 import { S, nat } from '../core/state.js';
 import { AXES, deathYear } from '../core/character.js';
 import { MONTANTS, bondRate, bondService, liveBonds, bondsDue, canIssue } from '../core/ledger.js';
+import { niveau } from '../core/race.js';
 import { clamp, fmt } from '../core/utils.js';
 import { PROJECTS } from '../data/projects.js';
 import { NATIONS } from '../data/nations.js';
@@ -190,6 +191,45 @@ function paneRegistre(){
   return h;
 }
 
+/* La course. Deux camps, deux jauges, et une phrase qui dit ce que chacune
+   veut dire — parce qu'un chiffre de 0 à 100 ne dit rien tout seul.
+
+   Les jauges s'affichent ici, contrairement aux traits du personnage : ce
+   n'est pas la même chose. Un trait est ce qu'on est, et se lit en phrases ;
+   une jauge de risque est un instrument de bord, et se pilote. */
+const TCHER = {
+  historique: "Tchernobyl a eu lieu comme dans l'Histoire : une tranche, trente et un morts immédiats, un nuage sur l'Europe.",
+  aggravee: "Tchernobyl a emporté deux tranches. Le programme soviétique ne s'en relèvera pas.",
+  contaminee: "Trois tranches ont brûlé. Le nuage est passé sur vos terres émergées, et rien n'y fixe les poussières.",
+};
+
+function paneCourse(){
+  const eux = S.sovietGW || 0, vous = S.power, e = vous - eux;
+  const max = Math.max(vous, eux, 10) * 1.1;
+  let h = `<div class="sec">L'atome contre l'eau</div>
+  <p style="font-size:11px;color:#9aa3ad;line-height:1.5;margin:0 0 8px">
+  Obninsk produit du courant depuis 1954. La comparaison se fige en 1991 — après, il n'y a plus d'Union soviétique à rattraper.</p>
+  ${bar("Vos gigawatts", vous, max, '#e6c65a', fmt(vous,1)+' GW')}
+  ${bar("Nucléaire soviétique", eux, max, '#8fb4d0', fmt(eux,1)+' GW')}
+  <div style="font-size:11.5px;margin-top:6px">
+    ${e >= 0 ? `<b style="color:#8fd096">L'eau mène de ${fmt(e,1)} GW.</b>` : `<b style="color:#e08b82">L'atome mène de ${fmt(-e,1)} GW.</b>`}</div>`;
+
+  if (S.atomGW > 0) h += `<p style="font-size:11px;color:#9aa3ad;margin:8px 0 0">Dont <b style="color:#c3cbd4">${fmt(S.atomGW,1)} GW</b> produits par vos propres réacteurs. Gagner ainsi, c'est gagner en changeant de camp.</p>`;
+
+  h += `<div class="sec">Les deux jauges</div>
+  ${bar("Pression sur Moscou", S.pressure, 100, '#d0a85c', niveau(S.pressure))}
+  <p style="font-size:10.5px;color:#8c949e;margin:-2px 0 8px;line-height:1.45">
+  Monte avec votre avance, la propagande, l'embargo et la main tendue refusée. Une URSS pressée construit plus vite <em>et moins bien</em> — et Tchernobyl, en 1986, sera à la mesure de ce chiffre.</p>
+  ${bar("Contrainte sur l'ouvrage", S.strain, 100, '#c98d7c', niveau(S.strain))}
+  <p style="font-size:10.5px;color:#8c949e;margin:-2px 0 0;line-height:1.45">
+  Monte avec la hâte, l'entretien sabré, le suréquipement, les séismes et l'Etna. Au-delà de soixante-quinze, un barrage peut céder dans la nuit.
+  ${S.flags.entretien ? '<br>La ligne d\'entretien est inscrite au budget : 1 Md par an.' : '<br><b style="color:#e08b82">Aucune ligne d\'entretien au budget.</b>'}</p>`;
+
+  if (S.flags.tcher) h += `<div class="sec">1986</div>
+    <p style="font-size:11.5px;color:#c3cbd4;line-height:1.6">${TCHER[S.flags.tcher]}</p>`;
+  return h;
+}
+
 function paneDoc(){
   return `<div class="sec">Le projet réel</div>
   <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4"><b>Atlantropa</b> (ou <i>Panropa</i>) est le projet de l'architecte munichois
@@ -232,4 +272,4 @@ function paneDoc(){
   Le relief et la bathymétrie sont réels — <i>Terrain Tiles</i>, AWS Open Data, agrégat de SRTM, NED, ETOPO1 et GEBCO — rééchantillonnés sur une
   grille de 3,37 km. Le trait de côte, lui, reste dessiné à la main, et les frontières sont celles de 1930 : c'est un jeu, pas un SIG.</p>`;
 }
-export { bar, paneOps, paneEnv, paneGeo, panePortrait, paneRegistre, paneDoc };
+export { bar, paneOps, paneEnv, paneGeo, paneCourse, panePortrait, paneRegistre, paneDoc };

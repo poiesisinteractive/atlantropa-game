@@ -12,6 +12,7 @@ import { ambient, tryDecision } from '../content/engine.js';
 import { pickEnding } from '../content/endings.js';
 import { deathYear, lifeYear } from './character.js';
 import { bondsDue } from './ledger.js';
+import { raceYear } from './race.js';
 import { endGame } from './endgame.js';
 
 /* Le débit turbiné compense une part du déficit : la mer descend d'autant moins. */
@@ -111,7 +112,11 @@ function stepYear(){
 
   const m=measure();
   const H=-Math.min(S.levelW,0);
-  S.power = 0.592*S.turbine*H*(S.built.gib?1:0)*(S.built.dard?1.06:1)*(S.built.sic?1.12:1)*S.powerMul;
+  /* `atomGW` : les réacteurs que l'Institut a fini par commander, s'il en a
+     commandé. Ils comptent dans la puissance livrée — donc dans les recettes
+     et l'opinion — et dans la course, ce qui rend une victoire à l'atome
+     possible et amère. */
+  S.power = 0.592*S.turbine*H*(S.built.gib?1:0)*(S.built.dard?1.06:1)*(S.built.sic?1.12:1)*S.powerMul + S.atomGW;
 
   let inc = 3.0 + S.power*(S.flags.oil?0.16:0.115)*(S.built.grd?1.35:1);
   for(const k in nat) if(nat[k].mem) inc+=nat[k].ct;
@@ -122,7 +127,7 @@ function stepYear(){
      certains dossiers) et les émissions du registre, qui s'éteignent d'elles-
      mêmes à leur terme. */
   const dette = (S.year<S.debtUntil ? S.debtService : 0) + bondsDue();
-  const exp = build+0.4+dette+(S.built.gib?1.1:0)+(S.built.sic?0.7:0)+(S.built.cgo?0.9:0)+S.refugees*0.18+S.deadPorts*0.22;
+  const exp = build+0.4+dette+(S.flags.entretien?1:0)+(S.built.gib?1.1:0)+(S.built.sic?0.7:0)+(S.built.cgo?0.9:0)+S.refugees*0.18+S.deadPorts*0.22;
   S.income=inc; S.spend=exp; S.money+=inc-exp;
   if(S.money<-12) { endGame('faillite'); return; }
 
@@ -165,6 +170,10 @@ function stepYear(){
 
   for(const e of COND_EVENTS) if(e.c()) e.fn();
   if(S.year%10===0) log(`— ${S.year} — niveau ${fmt(S.levelW,1)} m · ${fmt(S.power,0)} GW · ${fmt(S.land,0)} km² émergés · salinité ${fmt(Math.max(S.salW,S.salE),1)} g/L · biodiversité ${fmt(S.biodiv,0)} %`,'big');
+
+  /* La course et les deux jauges, avant les fins : une rupture d'ouvrage
+     termine la partie séance tenante. */
+  raceYear();
 
   /* Les trois arrêts, puis la mort. L'ordre compte : une partie qui casse
      casse, même l'année où Morev devait mourir. */

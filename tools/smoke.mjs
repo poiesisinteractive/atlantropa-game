@@ -70,6 +70,12 @@ if (!/Alexe/.test(portrait) || portrait.length < 400)
 
 /* Le registre : emprunter par l'interface, et vérifier que le service pèse.
    C'est la seule action d'argent que le joueur déclenche lui-même. */
+/* L'onglet de la course n'existe qu'à partir d'Obninsk : en 1930, il doit
+   être caché. Les quarante ans simulés plus bas passent 1954, et il doit
+   alors apparaître de lui-même. */
+const courseCachee = await page.evaluate(() => document.querySelector('#tabs button[data-tab="race"]').hidden);
+if (!courseCachee) errors.push("course : l'onglet est visible dès 1930");
+
 await page.click('#tabs button[data-tab="reg"]');
 const avantEmprunt = await page.evaluate(() => window.__atl.S.money);
 await page.click('#pane-reg .choices button, #pane-reg button');
@@ -109,12 +115,24 @@ const after = await page.evaluate(() => ({
   ended: window.__atl.S.ended,
 }));
 
+const course = await page.evaluate(() => ({
+  onglet: !document.querySelector('#tabs button[data-tab="race"]').hidden,
+  flag: !!window.__atl.S.flags.course,
+  urss: +(window.__atl.S.sovietGW || 0).toFixed(2),
+}));
+if (!course.flag) errors.push("course : Obninsk n'a pas ouvert la course en 1954");
+if (!course.onglet) errors.push("course : l'onglet reste caché après 1954");
+if (!(course.urss > 0)) errors.push('course : les gigawatts soviétiques restent nuls');
+await page.click('#tabs button[data-tab="race"]');
+const paneRace = await page.evaluate(() => document.getElementById('pane-race').textContent);
+if (!/gigawatts/i.test(paneRace)) errors.push('course : le panneau ne montre pas les deux camps');
+
 // Chaque calque doit se dessiner sans erreur.
 for (const l of ['geo', 'eco', 'sel', 'terrain']) {
   await page.click(`#layers button[data-l="${l}"]`);
   await page.waitForTimeout(120);
 }
-for (const t of ['env', 'geo', 'reg', 'port', 'doc', 'ops']) {
+for (const t of ['env', 'geo', 'reg', 'race', 'port', 'doc', 'ops']) {
   await page.click(`#tabs button[data-tab="${t}"]`);
   await page.waitForTimeout(80);
 }
@@ -125,6 +143,7 @@ await browser.close();
 console.log('boot   ', boot);
 console.log('prologue', perso);
 console.log('registre', registre);
+console.log('course  ', course, '· onglet caché en 1930 :', courseCachee);
 console.log('après  ', after);
 if (errors.length) {
   console.error('\nERREURS :');

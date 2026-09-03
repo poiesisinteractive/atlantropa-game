@@ -399,3 +399,52 @@ action d'interface et non un dossier. Le cycle des obligations est donc éprouv�
 à part, hors partie. Si la phase 4 donne à la course un besoin d'argent
 automatique, il faudra un dossier « émission » pour que les parties simulées
 empruntent aussi.
+
+### Phase 4 — la course (03/09/2026, branche `claude/phase4-course`)
+
+Livré : `core/race.js` (courbe soviétique réelle, les deux jauges, le tour
+annuel, la rupture), `content/race.js` (dix-huit dossiers : cinq leviers, trois
+équipements de puissance, trois incidents nucléaires réels, Tchernobyl à trois
+issues, cinq incidents d'ouvrage dont l'Etna), l'onglet **Course** qui
+n'apparaît qu'à Obninsk, les fins `courant`, `atome` et `zancleen`, et trois
+nouveaux blocs de `sim-check`.
+
+**Ce qui a été mesuré, et ce que la mesure a changé.**
+
+*La course était ingagnable.* Avec le seul rééquipement existant (+12 %), le
+meilleur chemin donnait 26 GW contre 31,9 — la fin `courant` aurait été du
+texte mort, exactement comme le seuil de −55 m en phase 1. D'où trois dossiers
+d'équipement neufs, tous payants en argent et en contrainte : la seconde usine
+que Sörgel avait prévue et qu'on n'a jamais équipée (+16 %), le suréquipement
+des groupes (+14 %, +11 de contrainte), la dorsale à courant continu vers la
+plaine du Pô (+15 %). Mesures après correction : rien fait, 19,9 contre 31,9 ;
+Kaplan seules et bascule en 1975, 26 contre 31,9 ; Kaplan et seconde usine,
+bascule en 1978, 32,7 contre 31,9 ; tout équipé, bascule en 1985, 50,7 contre
+32,2 ; vannes jamais ouvertes, 0 GW. Les deux extrêmes perdent, et c'est le
+dilemme des vannes qui décide — exactement ce qu'on voulait.
+
+*La course rendait cinq fins inatteignables.* Une fois `S.flags.course` posé,
+tout joueur mort après 1980 — presque tous — recevait un verdict de course, et
+les bilans du monde (`merbasse`, `plainedesel`, `lacdesautres`, `enterre`)
+devenaient inaccessibles. La règle a donc un second garde-fou : la course ne
+juge que si l'eau y était, ne serait-ce que de loin (au moins 40 % des
+gigawatts soviétiques). Un homme qui a passé sa vie vannes closes n'a pas perdu
+une course, il n'y a pas couru : c'est la mer qu'il laisse qui le juge.
+
+*Le séisme ne se déclenchait jamais.* L'événement `quake` demandait −70 m,
+hérité d'une partie de deux siècles. Seuil ramené à −25 m, et il alimente
+désormais la contrainte.
+
+**Le cinquième levier**, resté sans nom au tour 5, est l'**embargo
+technologique** : priver l'Est de turbines et d'instruments, ce qui le pousse à
+tout fabriquer lui-même — plus vite et moins bien.
+
+**La nuit zancléenne** est une fin distincte de `reflood` et non sa réécriture :
+rouvrir Gibraltar volontairement et le voir céder ne sont pas le même geste, et
+le jeu offre les deux. Total : treize fins.
+
+⏳ Reste pour la phase 3 : les postures de pays, la chronologie à deux lignes,
+les interactions de carte. Le moteur d'histoire alternative n'a pour l'instant
+qu'une charnière au sens plein — Tchernobyl à trois issues — et deux portes de
+divergence (la saisie de 1944, la course). Les six charnières du tour 6
+attendent la carte.

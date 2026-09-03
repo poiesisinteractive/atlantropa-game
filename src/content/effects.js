@@ -13,6 +13,9 @@ const E={
   r:n=>{S.refugees=Math.max(0,S.refugees+n);},
   b:n=>{S.biodiv=clamp(S.biodiv+n,0,100);},
   f:k=>{S.flags[k]=true;},
+  // Un drapeau qui porte une valeur plutôt qu'un booléen : `tcher` vaut
+  // l'issue de 1986, et la courbe soviétique la lit.
+  f2:(k,v)=>{S.flags[k]=v;},
   dette:(md,serv,ans)=>{ S.money+=md; S.debtService+=serv; S.debtUntil=Math.max(S.debtUntil,S.year+ans);
     log(`Emprunt de ${md} Md : service de ${fmt(serv,1)} Md/an jusqu'en ${S.debtUntil}.`); },
   gel:a=>{S.flags.freeze=S.year+a;},
