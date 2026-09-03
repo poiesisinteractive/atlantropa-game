@@ -355,3 +355,10 @@ le bilan le plus favorable redevient inatteignable.
 ⏳ Reste ouvert pour la phase 2 : les fins `confisque`, `courant`, `atome` et
 `passeport` attendent les drapeaux de leurs systèmes (saisie d'État, course,
 clause soviétique) et ne peuvent pas encore tomber.
+
+### Décision de calibrage (03/09/2026)
+
+L'espérance longue est conservée : mort attendue en 1990, fenêtre 1975-2000,
+soit un homme de 70 à 95 ans. C'est vingt ans de plus que Sörgel, et c'est
+délibéré — la course avec l'URSS a besoin d'un porteur vivant en 1986 et en
+1989.
