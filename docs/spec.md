@@ -241,6 +241,51 @@ Les seuils ci-dessus sont des points de départ pour `sim-check`, pas des décis
 | Chronologie | **Frise à deux lignes.** En haut l'Histoire réelle, dates fixes, barrées quand déviées ; en bas la vôtre : charnières, incidents, ruptures, mort du héros. Indice de divergence en tête ; un clic rouvre le dossier. | Nouvel onglet. La ligne du haut est une donnée statique (`data/history.js`), la ligne du bas se construit depuis le journal. |
 | Fins à la mort | **Par ce qu'il laisse** : le nom est l'état du monde à sa mort. | Six à huit fins, une par combinaison de niveau, course et posture. Liste à arrêter au tour 9. |
 
+### Tour 9 — les fins, la vie, la dette, les charnières (03/09/2026)
+
+| Question | Décision | Conséquences |
+|---|---|---|
+| Fins à la mort | **Les neuf.** Cinq du monde, deux de la course, celle de l'homme, celle de la rupture. | `content/endings.js` passe de six fins à neuf ; `siecle` et `victory` disparaissent, `reflood` est réécrite. Table ci-dessous. |
+| Coût de vie | **Une espérance en années.** Mort attendue en 1990 ; les cartes retirent ou rendent des mois. Jamais affichée : le journal glisse des signes. | `S.lifeExpectancy` en années fractionnaires, `S.health` non affiché. Barème ci-dessous. |
+| Obligations | **Émissions de 10 à 40 Md**, 15 ou 25 ans. Taux de base 4 %, +1 point par tranche de 20 de soutien manquant, −1,5 point si un bailleur garantit. Deux émissions vives au maximum. | Le service annuel s'ajoute à la dépense existante (`S.debtService` en porte déjà la forme). Le défaut est la `faillite` actuelle, à −12 Md. |
+| Texte des charnières | **Comme les dossiers existants** : titre, trois lignes, trois options chiffrées ; la charnière ne se distingue que par ses conditions et sa trace sur la chronologie. | Aucune forme nouvelle à écrire dans l'interface. Je les écris, vous corrigez. |
+
+#### Les neuf fins
+
+| Nom | Condition à la mort du héros | Ce qu'elle dit |
+|---|---|---|
+| **La mer basse** | Point de non-retour passé (< −55 m), Institut maître de l'ouvrage | L'œuvre lui survit. La fin la plus proche d'une victoire. |
+| **Une plaine de sel** | < −100 m, mais `dust` élevé, ports morts, opinion basse | Il a réussi, et le prix est visible depuis l'espace. |
+| **Le lac des autres** | L'ouvrage vit, l'Institut n'en est plus maître (bailleurs, États, cartel) | Il a construit pour d'autres. |
+| **L'ouvrage confisqué** | Un État a saisi un barrage (charnière de guerre, posture *en guerre*) | Le monde s'est retourné contre le projet. Décidée au tour 6. |
+| **Enterré avec lui** | Chantiers à l'arrêt, soutien effondré, rien d'irréversible | Le projet meurt à sa mort. |
+| **Le courant de l'Europe** | Les GW de l'eau dépassent l'atome soviétique à la fin de la course | La course gagnée — au prix de la descente, qui s'est arrêtée. |
+| **L'atome a gagné** | Moscou l'emporte, ou Tchernobyl n'a pas suffi | L'argument de 1954 avait raison. |
+| **Le passeport** | Main tendue acceptée, clause soviétique honorée | Il meurt soviétique. La patrie retrouvée contre l'œuvre. |
+| **La nuit zancléenne** | Gibraltar rompu (`S.strain`) | La mer revenue en une nuit, sur des gens. Réécriture de `reflood`. |
+
+Croisement : les fins de la course l'emportent si la course est jouée jusqu'au
+bout ; *La nuit zancléenne* et *L'ouvrage confisqué* l'emportent sur tout.
+
+#### Barème du coût de vie
+
+Espérance de départ : **1990**. Les cartes la déplacent en mois, sans jamais
+l'afficher.
+
+| Ce qui coûte | Mois |
+|---|---|
+| Un chantier suivi sur site | −4 |
+| Une année de surmenage (deux chantiers actifs, trésorerie négative) | −3 |
+| L'exil (Zurich sous le Reich, ou plus loin) | −6 |
+| Une rupture vécue, un incident majeur | −12 |
+| Un procès, une commission d'enquête | −2 |
+| Le retrait, une année sans décision lourde | +3 |
+| Zurich, le calme, un médecin | +6 |
+
+Fenêtre effective : ~1975-2000, comme posé au tour 2. Le journal glisse des
+signes (« vous toussez à nouveau », « le médecin insiste ») quand l'espérance
+descend sous certains paliers.
+
 ## 2. Vue d'ensemble — ce que la spec ajoute au code
 
 Pour lire les six tours d'un coup. Chaque ligne est un module ou une donnée,
@@ -258,13 +303,7 @@ avec la phase qui la porte (ordre convenu : 1 → 2 → 4 → 3).
 
 ## 3. Questions ouvertes ⏳
 
-- Les fins à la mort : noms, textes, seuils.
-- Chiffrage du coût de vie des cartes.
-- Acte I : chiffres des obligations. (La première pierre est devenue une
-  question du moteur d'histoire alternative.)
 - Système d'incidents : les seuils des jauges (au premier `sim-check`).
-- Moteur d'histoire alternative : le texte des charnières, la fin *l'ouvrage
-  confisqué*.
 - Interactions sur la carte : pays (pas de polygones aujourd'hui), conflits
   (produits par le moteur d'histoire alternative).
 - Adaptation de `sim-check` : il force Gibraltar et saute la négociation ; il
