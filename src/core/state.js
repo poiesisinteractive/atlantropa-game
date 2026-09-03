@@ -29,7 +29,13 @@ const S={
      rapproche la mort. Jamais affiché : le journal en glisse des signes. */
   traits:{ ideal:0, africa:0, sorgel:0, russia:0 },
   plan:{ core:'gib', target:-200, benefit:'energie', africa:'colonie' },
-  portrait:[], birth:1905, lifeMonths:0, health:0, projMul:{}
+  portrait:[], birth:1905, lifeMonths:0, health:0, projMul:{},
+
+  /* ------------------------------------------------------ LE GRAND LIVRE
+     `backers` : le bailleur signé et l'année. `ledger` : les clauses, avec
+     leur statut — une clause dénoncée reste inscrite, c'est un grand livre
+     et non un brouillon. `bonds` : les émissions vives et éteintes. */
+  backers:{}, ledger:[], bonds:[]
 };
 PROJECTS.forEach(p=>{S.prog[p.id]=0;S.built[p.id]=false;S.active[p.id]=false;});
 const nat={}; NATIONS.forEach(n=>nat[n.id]={...n});

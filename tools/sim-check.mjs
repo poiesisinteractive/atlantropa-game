@@ -20,7 +20,9 @@
      • les invariants tiennent : niveau borné, salinité croissante avec
        l'assèchement, biodiversité et opinions dans [0,100], trésor fini ;
      • le personnage tient : onze cartes de prologue, un plan complet, une
-       mort dans la fenêtre 1975-2000.
+       mort dans la fenêtre 1975-2000 ;
+     • le grand livre tient : une clause signée reste inscrite, une émission
+       s'éteint à son terme, et le marché se ferme à la troisième.
 
    Le tirage est déterministe : `Math.random` est remplacé par un générateur
    à graine, donc un échec se rejoue à l'identique. Plusieurs graines par
@@ -55,6 +57,7 @@ const { buildHypsometry } = await import('../src/core/hypsometry.js');
 const { measure, measureExact, computeStrand, updateExposure, stepYear } = await import('../src/core/sim.js');
 const { dec, choose } = await import('../src/content/engine.js');
 const { playPrologue } = await import('../src/content/prologue.js');
+const { canIssue, issue, bondsDue, liveBonds, bondRate } = await import('../src/core/ledger.js');
 const { deathYear } = await import('../src/core/character.js');
 const { on } = await import('../src/core/bus.js');
 const { setSpeed } = await import('../src/core/clock.js');
@@ -159,17 +162,44 @@ for (let s = 1; s <= SEEDS; s++) {
   if (!S.ended) failures.push(`graine ${s} : la partie ne se termine pas en ${YEARS} ans`);
   else if (!ENDINGS.has(S.ended)) failures.push(`graine ${s} : fin inconnue « ${S.ended} »`);
   else if (!end) failures.push(`graine ${s} : fin « ${S.ended} » sans annonce sur le bus`);
-  else if (end.rows.length !== 9) failures.push(`graine ${s} : verdict à ${end.rows.length} lignes`);
+  else if (end.rows.length !== 10) failures.push(`graine ${s} : verdict à ${end.rows.length} lignes`);
 
   rows.push({
     graine: s, fin: S.ended ?? '—', an: S.year, mort,
     coeur: S.plan.core, cible: S.plan.target,
+    clauses: S.ledger.length, emprunts: S.bonds.length,
     niveau: S.levelW.toFixed(0), GW: S.power.toFixed(0),
     'km²': Math.round(S.land), sel: S.salW.toFixed(1),
     poussière: S.dust.toFixed(0), biodiv: S.biodiv.toFixed(0),
     dossiers: decisions, ms,
   });
 }
+
+/* ------------------------------------------------------------ les obligations
+
+   Le cycle complet d'une émission, hors partie : on emprunte, le service
+   pèse sur la dépense, le marché se ferme à la troisième ligne, et l'émission
+   s'éteint d'elle-même à son terme. Quatre affirmations, quatre vérifications
+   — c'est de l'argent, cela ne se contrôle pas à l'œil. */
+reset(7);
+S.support = 50;
+const avant = S.money;
+if (!issue(25, 15)) failures.push('obligations : la première émission est refusée');
+if (S.money !== avant + 25) failures.push(`obligations : ${S.money - avant} Md reçus pour 25 émis`);
+const service1 = bondsDue();
+if (!(service1 > 0)) failures.push('obligations : service nul après émission');
+issue(10, 25);
+if (canIssue()) failures.push('obligations : une troisième ligne reste ouverte');
+if (issue(40, 15)) failures.push('obligations : la troisième émission est acceptée');
+if (!(bondsDue() > service1)) failures.push('obligations : la seconde émission ne pèse pas');
+S.year += 16;
+if (liveBonds().length !== 1) failures.push(`obligations : ${liveBonds().length} ligne(s) vive(s) après seize ans, une attendue`);
+if (!canIssue()) failures.push("obligations : le marché reste fermé après l'extinction d'une ligne");
+// Le taux suit le soutien : un projet qu'on croit mort emprunte plus cher.
+reset(7); S.support = 20; const cher = bondRate(25, 15);
+reset(7); S.support = 90; const bon = bondRate(25, 15);
+if (!(cher > bon + 1)) failures.push(`obligations : le taux ne suit pas le soutien (${cher} contre ${bon})`);
+const obligations = { cher: +cher.toFixed(2), bon: +bon.toFixed(2) };
 
 /* ------------------------------------------- les bilans sont-ils atteignables ?
 
@@ -205,7 +235,8 @@ if (ecart > 0.005) failures.push(`courbe hypsométrique : écart de ${(ecart * 1
 /* ------------------------------------------------------------------ sortie */
 console.log(`relief cuit en ${tGrid} ms · ${SEEDS} parties, prologue compris, ${YEARS} ans au plus\n`);
 console.table(rows);
-console.log(`\nmeilleur cas physique : ${meilleur.niveau} m en ${meilleur.an}, fin « ${meilleur.fin} »`);
+console.log(`\nobligations : 25 Md sur 15 ans coûtent ${obligations.cher} % à soutien 20, ${obligations.bon} % à soutien 90`);
+console.log(`meilleur cas physique : ${meilleur.niveau} m en ${meilleur.an}, fin « ${meilleur.fin} »`);
 console.log(`courbe hypsométrique à −120 m : écart ${(ecart * 100).toFixed(4)} % avec le balayage complet`);
 console.log(`total : ${Date.now() - t0} ms, sans navigateur`);
 

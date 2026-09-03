@@ -1,7 +1,7 @@
 import { S, opts } from '../core/state.js';
 import { fmt } from '../core/utils.js';
 import { LEGENDS } from './legends.js';
-import { paneOps, paneEnv, paneGeo, panePortrait, paneDoc } from './panes.js';
+import { paneOps, paneEnv, paneGeo, panePortrait, paneRegistre, paneDoc } from './panes.js';
 import { paint } from '../render/paint.js';
 import { applyRates } from '../core/sim.js';
 
@@ -27,7 +27,7 @@ function refresh(){
   if(!(act==='ops'&&sliderBusy)){
     const el=document.getElementById('pane-'+act), sc=el.scrollTop;
     el.innerHTML = act==='ops'?paneOps():act==='env'?paneEnv():act==='geo'?paneGeo()
-                 :act==='port'?panePortrait():paneDoc();
+                 :act==='reg'?paneRegistre():act==='port'?panePortrait():paneDoc();
     el.scrollTop=sc;
     const sl=document.getElementById('slider');
     if(sl){

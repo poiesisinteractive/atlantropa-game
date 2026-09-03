@@ -1,5 +1,6 @@
 import { S, nat } from '../core/state.js';
 import { leans } from '../core/character.js';
+import { BACKERS } from './backers.js';
 import { dirty } from '../core/dirty.js';
 import { applyRates } from '../core/sim.js';
 import { E, SUD, RIV } from './effects.js';
@@ -452,4 +453,9 @@ const DECISIONS=[
     ["Reprendre après constat","opinion −5",()=>{E.o(-5);}],
     ["Reprendre le soir même","+1 Md · opinion −12",()=>{E.m(1);E.o(-12);}]]}
 ];
+/* Les bailleurs sont des dossiers comme les autres : offres dans leur
+   fenêtre, échéances à date fixe. Les concaténer plutôt que les traiter à
+   part, c'est ce qui leur donne gratuitement la pause du temps, le tirage
+   pondéré, le journal et la modale. */
+DECISIONS.push(...BACKERS);
 export { DECISIONS };

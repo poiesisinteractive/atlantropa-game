@@ -1,5 +1,6 @@
 import { S, nat } from '../core/state.js';
 import { AXES, deathYear } from '../core/character.js';
+import { MONTANTS, bondRate, bondService, liveBonds, bondsDue, canIssue } from '../core/ledger.js';
 import { clamp, fmt } from '../core/utils.js';
 import { PROJECTS } from '../data/projects.js';
 import { NATIONS } from '../data/nations.js';
@@ -22,10 +23,9 @@ function paneOps(){
       Puissance : <b style="color:#e6c65a" id="turbPow">${fmt(S.power,1)} GW</b></div>`;
   } else h+=`<p style="font-size:11px;color:#9aa3ad">Rien ne commence avant que le détroit ne soit fermé. Il faut l'accord de l'Espagne, du Maroc et du Royaume-Uni.</p>`;
 
-  h+=`<div class="sec">Trésorerie</div><div style="font-size:11.5px;line-height:1.75">
+  h+=`<div class="sec">En bref</div><div style="font-size:11.5px;line-height:1.75">
      Recettes <b style="color:#8fd096;float:right">+${fmt(S.income,1)} Md/an</b><br>
      Dépenses <b style="color:#e08b82;float:right">−${fmt(S.spend,1)} Md/an</b><br>
-     ${S.year<S.debtUntil?`Service de la dette <b style="color:#e08b82;float:right">−${fmt(S.debtService,1)} Md jusqu'en ${S.debtUntil}</b><br>`:''}
      Consortium <b style="float:right">${nMem} / ${NATIONS.length} nations</b><br>
      Décisions prises <b style="float:right">${S.decisions}</b></div>
    <div class="sec">Chantiers</div>`;
@@ -138,6 +138,58 @@ function panePortrait(){
   return h;
 }
 
+/* Le registre : ce qui a été signé, et ce qui a été emprunté.
+
+   Deux prix côte à côte. Les clauses n'ont pas de chiffre — elles ont une
+   date d'échéance et un statut. Les émissions n'ont que des chiffres. C'est
+   le contraste qui fait le panneau : on lit d'un côté ce qu'on doit à
+   quelqu'un, de l'autre ce qu'on doit tout court. */
+const STATUTS = { active: ['en vigueur', ''], honoree: ['honorée', 'ok'], denoncee: ['dénoncée', 'no'] };
+
+function paneRegistre(){
+  const dette = bondsDue() + (S.year < S.debtUntil ? S.debtService : 0);
+  let h = `<div class="sec">Trésorerie</div><div style="font-size:11.5px;line-height:1.75">
+    Trésor <b style="color:#e6c65a;float:right">${fmt(S.money,1)} Md</b><br>
+    Recettes <b style="color:#8fd096;float:right">+${fmt(S.income,1)} Md/an</b><br>
+    Dépenses <b style="color:#e08b82;float:right">−${fmt(S.spend,1)} Md/an</b><br>
+    dont service de la dette <b style="color:#e08b82;float:right">−${fmt(dette,2)} Md/an</b></div>`;
+
+  h += `<div class="sec">Le grand livre</div>`;
+  if (!S.ledger.length) h += `<p style="font-size:11px;color:#8c949e">Aucune clause inscrite. L'Institut ne doit rien à personne, ce qui se voit à ses comptes.</p>`;
+  else for (const l of S.ledger) {
+    const [mot, cls] = STATUTS[l.statut] || ['—', ''];
+    h += `<div class="card"><div class="row"><h4>${l.nom}</h4><span class="tag ${cls}">${mot}</span></div>
+      <p>« ${l.clause} »</p>
+      <div style="font-size:10px;color:#8c949e;margin-top:4px">signée en ${l.y}${l.fin?` · close en ${l.fin}`:''}${l.echeance&&l.echeance!=='—'&&l.statut==='active'?` · échéance ${l.echeance}`:''}</div></div>`;
+  }
+
+  h += `<div class="sec">Émissions</div>`;
+  const vives = liveBonds();
+  if (!S.bonds.length) h += `<p style="font-size:11px;color:#9aa3ad;line-height:1.5">Emprunter est le seul financement qui ne demande rien d'autre que de l'argent. Le taux suit le soutien : un projet qu'on croit mort emprunte cher.${S.flags.garant?' La garantie de Zurich vaut un point et demi.':''}</p>`;
+  else for (const b of S.bonds) {
+    const vive = S.year < b.until;
+    h += `<div class="card"><div class="row"><h4>${b.md} Md · ${b.ans} ans</h4>
+      <span class="tag ${vive?'':'ok'}">${vive?`jusqu'en ${b.until}`:'éteinte'}</span></div>
+      <p>émise en ${b.y} à ${fmt(b.taux,2)} % · service ${fmt(b.service,2)} Md/an</p></div>`;
+  }
+
+  if (canIssue()) {
+    h += `<div style="font-size:10.5px;color:#8c949e;margin:8px 0 5px">Émettre — ${2-vives.length} ligne${2-vives.length>1?'s':''} encore ouverte${2-vives.length>1?'s':''}</div>
+      <div style="display:flex;flex-direction:column;gap:5px">`;
+    for (const ans of [15, 25]) {
+      h += `<div style="display:flex;gap:5px">` + MONTANTS.map((md) => {
+        const t = bondRate(md, ans);
+        return `<button style="flex:1;font-size:10.5px;line-height:1.3" onclick="issueBond(${md},${ans})">
+          ${md} Md · ${ans} ans<br><span style="color:#9aa3ad">${fmt(t,2)} % · ${fmt(bondService(md,ans,t),2)} Md/an</span></button>`;
+      }).join('') + `</div>`;
+    }
+    h += `</div>`;
+  } else if (!S.ended) {
+    h += `<p style="font-size:11px;color:#e08b82">Deux lignes vives : le marché est fermé jusqu'à l'extinction de l'une d'elles.</p>`;
+  }
+  return h;
+}
+
 function paneDoc(){
   return `<div class="sec">Le projet réel</div>
   <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4"><b>Atlantropa</b> (ou <i>Panropa</i>) est le projet de l'architecte munichois
@@ -180,4 +232,4 @@ function paneDoc(){
   Le relief et la bathymétrie sont réels — <i>Terrain Tiles</i>, AWS Open Data, agrégat de SRTM, NED, ETOPO1 et GEBCO — rééchantillonnés sur une
   grille de 3,37 km. Le trait de côte, lui, reste dessiné à la main, et les frontières sont celles de 1930 : c'est un jeu, pas un SIG.</p>`;
 }
-export { bar, paneOps, paneEnv, paneGeo, panePortrait, paneDoc };
+export { bar, paneOps, paneEnv, paneGeo, panePortrait, paneRegistre, paneDoc };

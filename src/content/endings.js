@@ -98,6 +98,8 @@ function verdict() {
     ["Niveau atteint", `−${-S.plan.target} m visés par votre plan`, `${fmt(S.levelW, 1)} m (ouest) · ${fmt(S.levelE, 1)} m (est)`],
     ["Niveau des océans", "Effet non prévu", `−${fmt(Math.abs(S.levelW) * 2.3e12 / 3.6e14, 2)} m dans le monde entier`],
     ["Décisions", "Le plan n'en prévoyait aucune", `${S.decisions} dossiers tranchés en ${S.year - 1930} ans`],
+    ["Grand livre", "Sörgel n'avait pas prévu de bailleurs",
+      `${S.ledger.length} clause${S.ledger.length > 1 ? 's' : ''} signée${S.ledger.length > 1 ? 's' : ''}, dont ${S.ledger.filter((l) => l.statut === 'denoncee').length} dénoncée(s) · ${S.bonds.length} émission(s)`],
     ["Alexeï Morev", `né en ${S.birth}, entré à l'Institut à ${1930 - S.birth} ans`,
       S.ended && S.year >= deathYear() ? `mort en ${S.year}, à ${S.year - S.birth} ans`
         : `${S.year - S.birth} ans en ${S.year}`],

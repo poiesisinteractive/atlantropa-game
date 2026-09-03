@@ -96,10 +96,36 @@ année de surmenage, un exil en coûtent ; une année calme en rend. L'espéranc
 et reste dans la fenêtre 1975-2000. Le journal en glisse les signes — une toux, deux nuits
 d'hôpital, les rendez-vous du matin annulés.
 
+## Le registre des bailleurs
+
+Dix visages, dix clauses. Chaque bailleur vient en deux temps : **l'offre**,
+un dossier qui se présente dans sa fenêtre historique et propose de l'argent,
+des hommes ou de la légitimité contre une clause inscrite au grand livre ; puis
+**l'échéance**, un second dossier à date fixe qui ne se présente *que si la
+clause a été signée* — le moment où l'Histoire vient la lire à voix haute.
+L'Italie signe en 1930 et présente sa note en 1943, le Reich en 1934 et en
+1945, l'URSS en 1936 et en 1939, le Plan Marshall en 1948 et en 1954. Un
+bailleur qu'on laisse passer ne revient pas.
+
+Il n'y a pas de moteur de bailleurs : un bailleur *est* un dossier, avec la
+même grammaire que les soixante-dix autres. Ce qu'il laisse derrière lui, en
+revanche, est nouveau — une ligne au grand livre, qui reste inscrite même
+dénoncée.
+
+À côté, les **obligations**, qui n'ont pas de visage mais un taux : 4 % de
+base, plus un point par tranche de vingt points de soutien manquant sous 70,
+moins un point et demi si un bailleur garantit. Deux lignes vives au maximum ;
+au-delà le marché se ferme. Le service pèse chaque année sur la dépense et
+l'émission s'éteint d'elle-même à son terme. Le défaut, c'est la faillite
+existante, à −12 Md.
+
+Le tout se lit dans l'onglet **Registre** : la trésorerie, le grand livre, les
+émissions, et les six boutons qui permettent d'emprunter.
+
 ## Événements
 
 Le temps est celui d'une vie — soixante ans, jusqu'à 29 secondes par année. Le rythme vient
-des décisions, pas de l'horloge : **70 dossiers** à trancher, qui mettent le jeu en pause.
+des décisions, pas de l'horloge : **89 dossiers** à trancher, qui mettent le jeu en pause.
 
 Diplomatie (Montreux 1936, Bandung 1955, la clause impériale de Mussolini), ingénierie
 (caissons retournés, corrosion saline, les ossements de Gallipoli sous le chantier des
@@ -300,13 +326,15 @@ src/core/           le modèle : grille, relief, tour de simulation — sans DOM
   sim.js            le tour d'un an : chantiers, niveau, sel, opinion, ports, la mort
   state.js          l'état de partie (S) et les options d'affichage (opts)
   character.js      traits, plan, espérance de vie — le personnage, sans jauge
+  ledger.js         le grand livre : clauses signées et obligations émises
   endgame.js        les fins : arrête l'horloge et annonce son verdict
   bus.js            ce que le modèle annonce à qui veut l'entendre
   journal.js        écrire une ligne de journal (S.log est de l'état, pas de l'écran)
   clock.js          vitesses du temps et changement de vitesse
 src/data/           contenu figé : nations, projets, villes, frontières, dem.bin
-src/content/        les 70 dossiers, 30 brèves, événements conditionnels, fins
+src/content/        les 89 dossiers, 30 brèves, événements conditionnels, fins
   prologue.js       les onze cartes de 1926-1930, et leur moteur
+  backers.js        les dix bailleurs : offres, clauses, échéances
 src/render/         le rendu Canvas 2D — le fond raster, reconstruit pixel à pixel
   overlays.js       les surcouches vectorielles, partagées par les deux rendus
 src/render3d/       le rendu three.js — terrain, nappes par bassin, échelle verticale

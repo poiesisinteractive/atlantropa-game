@@ -68,6 +68,20 @@ const portrait = await page.evaluate(() => document.getElementById('pane-port').
 if (!/Alexe/.test(portrait) || portrait.length < 400)
   errors.push(`portrait : panneau trop court (${portrait.length} caractères)`);
 
+/* Le registre : emprunter par l'interface, et vérifier que le service pèse.
+   C'est la seule action d'argent que le joueur déclenche lui-même. */
+await page.click('#tabs button[data-tab="reg"]');
+const avantEmprunt = await page.evaluate(() => window.__atl.S.money);
+await page.click('#pane-reg .choices button, #pane-reg button');
+const registre = await page.evaluate(() => ({
+  tresor: window.__atl.S.money,
+  lignes: window.__atl.S.bonds.length,
+  service: window.__atl.S.bonds[0]?.service ?? 0,
+}));
+if (registre.lignes !== 1) errors.push(`registre : ${registre.lignes} émission(s) après un clic`);
+if (!(registre.tresor > avantEmprunt)) errors.push("registre : l'émission n'a pas crédité le trésor");
+if (!(registre.service > 0)) errors.push('registre : service de la dette nul');
+
 // Fermer la modale d'ouverture, forcer Gibraltar et faire tourner 40 ans
 // pour éprouver la simulation, le rendu des calques et les événements.
 await page.evaluate(() => {
@@ -100,7 +114,7 @@ for (const l of ['geo', 'eco', 'sel', 'terrain']) {
   await page.click(`#layers button[data-l="${l}"]`);
   await page.waitForTimeout(120);
 }
-for (const t of ['env', 'geo', 'port', 'doc', 'ops']) {
+for (const t of ['env', 'geo', 'reg', 'port', 'doc', 'ops']) {
   await page.click(`#tabs button[data-tab="${t}"]`);
   await page.waitForTimeout(80);
 }
@@ -110,6 +124,7 @@ await browser.close();
 
 console.log('boot   ', boot);
 console.log('prologue', perso);
+console.log('registre', registre);
 console.log('après  ', after);
 if (errors.length) {
   console.error('\nERREURS :');
