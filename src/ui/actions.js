@@ -3,9 +3,7 @@ import { clamp } from '../core/utils.js';
 import { dirty } from '../core/dirty.js';
 import { PROJECTS } from '../data/projects.js';
 import { log } from '../core/journal.js';
-import { hideModal } from './modal.js';
 import { refresh } from './hud.js';
-import { setSpeed } from '../core/clock.js';
 import { endGame } from '../core/endgame.js';
 window.toggleProj=id=>{ S.active[id]=!S.active[id];
   if(S.active[id])log(`Chantier ouvert : ${PROJECTS.find(p=>p.id===id).n}.`); refresh(); };
@@ -20,4 +18,3 @@ window.reflood=()=>{
     endGame('abandon'); return; }
   endGame('reflood');
 };
-window.startGame=()=>{ hideModal(); setSpeed(1); };

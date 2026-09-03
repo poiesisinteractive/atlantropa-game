@@ -1,4 +1,5 @@
 import { S, nat } from '../core/state.js';
+import { AXES, deathYear } from '../core/character.js';
 import { clamp, fmt } from '../core/utils.js';
 import { PROJECTS } from '../data/projects.js';
 import { NATIONS } from '../data/nations.js';
@@ -87,6 +88,56 @@ function paneGeo(){
   }
   return h+'</div>';
 }
+/* Le portrait. Des phrases, jamais des barres : c'est la décision du tour 3
+   de la spécification, et elle tient tout le panneau. Les traits ne sont
+   nommés qu'en toutes lettres, et seulement quand ils penchent assez pour
+   qu'une phrase soit vraie.
+
+   Ce que le joueur ne verra jamais ici : l'espérance de vie. Elle se devine
+   aux lignes du journal, et c'est tout. */
+const PENCHANTS = {
+  ideal:  { pos: "Il voit grand, et il en a fait une méthode.", neg: "Il ne dessine que ce qu'une fonderie sait couler." },
+  africa: { pos: "Pour lui, la rive sud signe ou ne signe pas — elle ne se prend pas.", neg: "Dans son plan, l'Afrique est une surface." },
+  sorgel: { pos: "Il est l'homme de Sörgel, et l'assume.", neg: "Il a toujours corrigé le maître, d'abord au crayon, puis autrement." },
+  russia: { pos: "La Russie n'est pas pour lui un deuil, mais une revanche à prendre par l'ouvrage.", neg: "Il parle de la Russie au passé, quand il en parle." },
+};
+
+function panePortrait(){
+  const age = S.year - S.birth;
+  let h = `<div class="sec">Alexeï Morev</div>
+  <p style="font-size:11.5px;line-height:1.7;color:#c3cbd4">Né en ${S.birth} près de Taganrog · apatride depuis 1921, passeport Nansen ·
+  École des ponts et chaussées, Paris · ${age} ans en ${S.year}.</p>`;
+
+  const dits = Object.entries(AXES).map(([k]) => {
+    const v = S.traits[k] || 0;
+    if (v >= 25) return PENCHANTS[k].pos;
+    if (v <= -25) return PENCHANTS[k].neg;
+    return null;
+  }).filter(Boolean);
+  if (dits.length) h += `<div class="sec">Ce qu'on dit de lui</div>
+    <p style="font-size:11.5px;line-height:1.7;color:#c3cbd4">${dits.join('<br>')}</p>`;
+
+  const coeur = { gib: 'Gibraltar', sic: 'la digue Sicile–Tunisie', dard: 'les Dardanelles' }[S.plan.core] || '—';
+  const but = { energie: "l'énergie", terres: 'les terres', paix: 'la paix par le chantier' }[S.plan.benefit] || '—';
+  const afr = S.plan.africa === 'partenaire' ? 'des États qui signent' : 'une terre à mettre en valeur';
+  h += `<div class="sec">Son plan, tel qu'il l'a écrit en 1930</div>
+  <div style="font-size:11.5px;line-height:1.75">
+    Par où commencer <b style="float:right">${coeur}</b><br>
+    Jusqu'où descendre <b style="float:right">${-S.plan.target} m</b><br>
+    Ce qu'il met en avant <b style="float:right">${but}</b><br>
+    L'Afrique dans le plan <b style="float:right">${afr}</b></div>`;
+
+  h += `<div class="sec">Sa vie</div>`;
+  if (!S.portrait.length) h += `<p style="font-size:11.5px;color:#8c949e">Rien encore. Le prologue n'a pas été joué.</p>`;
+  else h += S.portrait.map(p =>
+    `<div class="card" style="padding:8px 10px"><div style="font-size:10px;color:#8c949e;letter-spacing:.08em">${p.y}</div>
+     <p style="margin:3px 0 0;font-size:11.5px;line-height:1.6;color:#c3cbd4">${p.t}</p></div>`).join('');
+
+  if (S.ended) h += `<div class="sec">Fin</div>
+    <p style="font-size:11.5px;color:#c3cbd4">Mort en ${S.year}, à ${S.year - S.birth} ans. L'espérance était de ${deathYear()}.</p>`;
+  return h;
+}
+
 function paneDoc(){
   return `<div class="sec">Le projet réel</div>
   <p style="font-size:11.5px;line-height:1.65;color:#c3cbd4"><b>Atlantropa</b> (ou <i>Panropa</i>) est le projet de l'architecte munichois
@@ -129,4 +180,4 @@ function paneDoc(){
   Le relief et la bathymétrie sont réels — <i>Terrain Tiles</i>, AWS Open Data, agrégat de SRTM, NED, ETOPO1 et GEBCO — rééchantillonnés sur une
   grille de 3,37 km. Le trait de côte, lui, reste dessiné à la main, et les frontières sont celles de 1930 : c'est un jeu, pas un SIG.</p>`;
 }
-export { bar, paneOps, paneEnv, paneGeo, paneDoc };
+export { bar, paneOps, paneEnv, paneGeo, panePortrait, paneDoc };

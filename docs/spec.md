@@ -322,3 +322,36 @@ contact du code, et non par écrit :
   posés au chiffre proposé, réglés au premier `sim-check`.
 - Le texte des charnières et des neuf fins : écrit à la phase concernée,
   relu par le joueur.
+
+## 4. Journal de réalisation
+
+### Phase 1 — le personnage (03/09/2026, branche `claude/phase1-personnage`)
+
+Livré : `core/character.js` (quatre traits, le plan, l'espérance de vie),
+`content/prologue.js` (onze cartes de 1926 à 1930, à variantes tirées au sort),
+l'onglet **Portrait** en phrases, les trois écrans d'ouverture, les neuf fins
+avec leur sélecteur, trois dossiers neufs qui paient les dettes du prologue
+(l'exergue de 1938, le carnet vert, l'invitation de Moscou), les effets
+`E.tr` / `E.vie` / `E.port`, et un `sim-check` qui joue le prologue.
+
+**Un écart avec la spécification, et pourquoi.** Le tour 9 plaçait *La mer
+basse* au point de non-retour de −55 m. La porte du modèle a montré que le
+meilleur cas physique d'une vie d'homme — Gibraltar fermé en 1935, vannes
+closes, argent illimité, tous les ouvrages lancés — s'arrête à **−43 m** :
+0,95 m/an au mieux, soixante ans au plus. Le seuil rendait la fin
+inatteignable et n'en laissait qu'une, *Enterré avec lui*, quoi que fasse le
+joueur.
+
+Ce qui le remplace n'est pas un seuil plus bas mais une autre idée de
+l'irréversibilité : celle des comptes et des traités plutôt que celle de la
+roche. *La mer basse* demande un ouvrage qui descend (≤ −12 m), un Institut
+soutenu (≥ 60) et un consortium qui tient (≥ 6 nations) ; *Le lac des autres*
+est le même ouvrage sans la maîtrise ; *Une plaine de sel* l'emporte sur les
+deux dès que la poussière ou les ports morts passent leurs seuils. Le point de
+non-retour narratif descend à −35 m, atteignable dans une bonne partie.
+`sim-check` rejoue désormais le meilleur cas à chaque lancement et échoue si
+le bilan le plus favorable redevient inatteignable.
+
+⏳ Reste ouvert pour la phase 2 : les fins `confisque`, `courant`, `atome` et
+`passeport` attendent les drapeaux de leurs systèmes (saisie d'État, course,
+clause soviétique) et ne peuvent pas encore tomber.

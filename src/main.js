@@ -16,12 +16,13 @@ import { dec, fire, choose } from './content/engine.js';
 import { LEGENDS } from './ui/legends.js';
 import { log } from './core/journal.js';
 import { drawLog } from './ui/log.js';
-import { showModal } from './ui/modal.js';
+import { showOpening } from './ui/intro.js';
 import { setSpeedBtn, refresh } from './ui/hud.js';
 import { paint } from './render/paint.js';
 import { resize } from './render/interaction.js';
 import { cv } from './render/canvas.js';
 import * as R3 from './render3d/scene.js';
+import { startPrologue, playPrologue } from './content/prologue.js';
 import './ui/actions.js';
 import './ui/bridge.js';
 
@@ -40,6 +41,7 @@ window.__atl = { S, opts, dirty, dec, stepYear, measure, measureExact, refresh, 
                  R3, set3d: (on) => setMode3d(on), grid, geo,
                  // les coutures du modèle, pour les outils de vérification
                  bus, setSpeed, endGame, choose, DECISIONS,
+                 startPrologue, playPrologue,
                  fireDecision: (id) => fire(id ? DECISIONS.find(d => d.id === id) : DECISIONS[0]) };
 
 function loop(t){
@@ -153,24 +155,8 @@ const breathe=()=>new Promise(r=>setTimeout(r,30));
     computeStrand(true); updateExposure();
     document.getElementById('boot').remove();
     resize(); refresh(); drawLog(); setSpeedBtn();
-    log("Munich. L'Institut Atlantropa ouvre ses portes. Herman Sörgel a un plan pour l'Europe : lui donner un continent.",'big');
-    showModal(`
-      <div class="kicker">1930 · Institut Atlantropa, Munich</div>
-      <h2>Le Grand Œuvre</h2>
-      <p>Vous dirigez l'institut de Herman Sörgel. Le plan est simple et démesuré : barrer le détroit de Gibraltar,
-      abaisser la Méditerranée de <b>200 mètres</b>, en tirer une énergie sans fin et un continent neuf, et souder l'Europe à l'Afrique.</p>
-      <p><b>Le nœud du jeu.</b> La puissance d'une turbine vaut <i>débit × hauteur de chute</i>. La hauteur de chute, c'est le vide que vous
-      creusez. Pour produire, il faut assécher ; pour assécher, il faut renoncer à produire. Et le sel, lui, ne s'évapore jamais.</p>
-      <p><b>Le temps est long — deux siècles.</b> Il s'écoule lentement et s'arrête de lui-même à chaque décision : soixante-sept dossiers
-      vous seront soumis, diplomatiques, techniques, financiers, sanitaires, archéologiques. C'est là que se joue la partie, pas dans le
-      défilement des années.</p>
-      <p style="color:#9aa3ad;font-size:12px">Molette pour zoomer, glisser pour déplacer. <b>Espace</b> met en pause.
-      Les calques <b>Géologie</b>, <b>Économie</b> et <b>Sel</b> changent la lecture de la carte, et le bouton <b>3D</b> la bascule en relief.
-      L'onglet <b>Dossier</b> contient la documentation historique.</p>
-      <div class="choices">
-        <button onclick="startGame()">Ouvrir le chantier du siècle</button>
-        <button onclick="hideModal()">Regarder la carte d'abord</button>
-      </div>`);
+    log("Paris. Alexeï Morev, vingt et un ans, élève ingénieur, apatride. Il ne sait pas encore qu'un architecte munichois va lui donner un continent à porter.",'big');
+    showOpening();
     requestAnimationFrame(loop);
   }
 })();

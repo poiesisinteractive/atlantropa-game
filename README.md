@@ -3,6 +3,11 @@
 Un jeu de gestion sur le projet réel d'**Herman Sörgel** (1885-1952) : barrer le détroit de
 Gibraltar, abaisser la Méditerranée de deux cents mètres, et souder l'Europe à l'Afrique.
 
+On y joue **Alexeï Morev**, né en 1905 près de Taganrog, apatride depuis 1921, formé aux
+Ponts à Paris. Il lit Sörgel en 1929, entre à l'Institut en 1930, en hérite à la mort du
+maître en 1952 — et la partie s'arrête à la sienne. La spécification des évolutions en
+cours vit dans [`docs/spec.md`](docs/spec.md).
+
 ```sh
 npm install
 npm run dev
@@ -72,10 +77,29 @@ des lagunes hypersalines) encadrent l'effondrement de la biodiversité.
   messiniennes), **Économie** (route Gibraltar-Suez, réseau électrique, ressources,
   ports échoués), **Sel** (salinité par bassin, croûte d'halite, panaches de poussière).
 
+## Le prologue, 1926-1930
+
+Onze cartes avant la carte. Elles ne construisent rien : elles décident qui porte le
+projet. Chacune pose un **trait** — idéaliste ou pragmatique, l'Afrique terre vide ou
+partenaire, fidèle à Sörgel ou indépendant, la Russie en deuil ou en revanche — ou une
+dimension du **plan** : par où commencer, jusqu'où descendre, ce qu'on met en avant, ce
+que l'Afrique est dans le plan.
+
+Rien de tout cela ne s'affiche en chiffres. Les traits se lisent en phrases dans l'onglet
+**Portrait**, qui se remplit au fil de la partie ; le plan, lui, a des effets mesurables
+(l'ouvrage-cœur coûte 15 % de moins, la cible change le discours, le bénéfice change les
+recettes, la place de l'Afrique change l'accueil au sud). Chaque étape a ses variantes,
+tirées au sort : deux prologues ne se ressemblent pas.
+
+La vie du personnage se compte en mois, jamais affichés : un chantier suivi sur place, une
+année de surmenage, un exil en coûtent ; une année calme en rend. L'espérance part de 1990
+et reste dans la fenêtre 1975-2000. Le journal en glisse les signes — une toux, deux nuits
+d'hôpital, les rendez-vous du matin annulés.
+
 ## Événements
 
-Le temps est long — deux siècles, jusqu'à 29 secondes par année. Le rythme vient des
-décisions, pas de l'horloge : **67 dossiers** à trancher, qui mettent le jeu en pause.
+Le temps est celui d'une vie — soixante ans, jusqu'à 29 secondes par année. Le rythme vient
+des décisions, pas de l'horloge : **70 dossiers** à trancher, qui mettent le jeu en pause.
 
 Diplomatie (Montreux 1936, Bandung 1955, la clause impériale de Mussolini), ingénierie
 (caissons retournés, corrosion saline, les ossements de Gallipoli sous le chantier des
@@ -85,7 +109,29 @@ Provence, *qui peuplera les terres neuves*), science (le rapport Rouch de 1935, 
 carottes du Glomar Challenger en 1971, les épaves puniques qui ressortent et se délitent
 à l'air), et les rendez-vous imposés par l'Histoire.
 
+Trois d'entre eux n'existent que parce que le prologue a eu lieu et lui rendent la
+monnaie : l'exergue de Hitler que Sörgel place dans son livre en 1938, le contrôle des
+titres de séjour d'un apatride russe à Munich pendant la guerre, et l'invitation de
+l'Académie des sciences d'URSS à revenir voir le Volga — celle-ci ne se présente qu'à un
+homme dont la Russie est une revanche et non un deuil.
+
 S'y ajoutent 30 brèves d'ambiance et un bilan décennal.
+
+### Les fins
+
+Trois **arrêts** cassent la partie avant terme : faillite, dissolution du consortium,
+révolte. Les autres sont des **bilans** : Morev meurt, et l'on regarde ce qu'il laisse —
+*La mer basse*, *Une plaine de sel*, *Le lac des autres*, *Enterré avec lui*, plus quatre
+que les phases suivantes ouvriront (*L'ouvrage confisqué*, *Le courant de l'Europe*,
+*L'atome a gagné*, *Le passeport*).
+
+Leurs seuils sortent de la physique et non d'un souhait. Le meilleur cas possible —
+Gibraltar fermé en 1935, vannes closes, argent illimité, tous les ouvrages lancés —
+descend à **−43 m** en 1990 : la mer ne va pas plus vite que 0,95 m/an et une vie d'homme
+n'en contient que soixante. Le « point de non-retour » à −55 m aurait donc rendu *La mer
+basse* inatteignable, quoi que fasse le joueur. C'est `sim-check` qui l'a montré, et c'est
+`sim-check` qui rejoue ce meilleur cas à chaque lancement pour qu'aucune fin ne redevienne
+du texte mort.
 
 ## Le projet historique
 
@@ -149,8 +195,8 @@ prennent leur cible dans le premier argument, sinon dans `ATL_URL`, sinon sur
 `http://localhost:4173/` — le port de `npm run preview`.
 
 ```sh
-npm run check:model    # le modèle seul : 8 parties, NaN et invariants — sans navigateur
-npm run check:smoke    # non-régression : boot, 40 ans, calques, onglets
+npm run check:model    # le modèle seul : 8 parties avec prologue, NaN, invariants, fins
+npm run check:smoke    # non-régression : boot, prologue joué au clic, 40 ans, calques, onglets
 npm run check:hypso    # la table hypsométrique contre le balayage complet
 npm run check:ui3d     # les commandes du relief, par l'interface réelle
 npm run deps:check     # vulnérabilités, licences, dépréciations
@@ -251,20 +297,23 @@ src/core/           le modèle : grille, relief, tour de simulation — sans DOM
   shapes.js         traits de côte lissés, ligne de partage ouest/est
   grid.js           rasterisation, MNT, détail fractal, ombrage
   hypsometry.js     courbe cumulée des profondeurs — aires et volumes en O(1)
-  sim.js            le tour d'un an : chantiers, niveau, sel, opinion, ports
+  sim.js            le tour d'un an : chantiers, niveau, sel, opinion, ports, la mort
   state.js          l'état de partie (S) et les options d'affichage (opts)
-  endgame.js        les six fins : arrête l'horloge et annonce son verdict
+  character.js      traits, plan, espérance de vie — le personnage, sans jauge
+  endgame.js        les fins : arrête l'horloge et annonce son verdict
   bus.js            ce que le modèle annonce à qui veut l'entendre
   journal.js        écrire une ligne de journal (S.log est de l'état, pas de l'écran)
   clock.js          vitesses du temps et changement de vitesse
 src/data/           contenu figé : nations, projets, villes, frontières, dem.bin
-src/content/        les 67 dossiers, 30 brèves, événements conditionnels, fins
+src/content/        les 70 dossiers, 30 brèves, événements conditionnels, fins
+  prologue.js       les onze cartes de 1926-1930, et leur moteur
 src/render/         le rendu Canvas 2D — le fond raster, reconstruit pixel à pixel
   overlays.js       les surcouches vectorielles, partagées par les deux rendus
 src/render3d/       le rendu three.js — terrain, nappes par bassin, échelle verticale
   overlay.js        les mêmes surcouches, projetées par la caméra
 src/ui/             HUD, onglets, journal, modales, actions exposées à `window`
   bridge.js         le seul point où le modèle et le DOM se rencontrent
+  intro.js          les trois écrans d'ouverture : la porte, le prologue, l'Institut
 tools/              MNT hors ligne, modèle sans navigateur, vérifications d'écran
 reference/          la version 2D d'origine, un seul fichier, figée
 ```

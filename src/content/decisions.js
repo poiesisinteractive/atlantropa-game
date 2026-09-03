@@ -1,4 +1,5 @@
 import { S, nat } from '../core/state.js';
+import { leans } from '../core/character.js';
 import { dirty } from '../core/dirty.js';
 import { applyRates } from '../core/sim.js';
 import { E, SUD, RIV } from './effects.js';
@@ -326,20 +327,26 @@ const DECISIONS=[
 {id:"ww2",t:"La Wehrmacht entre en Pologne",k:"Histoire",fy:1939,
  x:"Vos ingénieurs reçoivent leur feuille de route. Le ciment part aux fortifications, l'acier aux blindages, et l'Institut n'a plus qu'un secrétariat et des maquettes.",
  o:[["Mettre l'Institut en sommeil","gel 7 ans · soutien −7",()=>{E.gel(7);E.s(-7);E.m(-2);}],
-    ["Offrir les plans au régime pour survivre","+5 Md · soutien +7 · opinion −26",()=>{E.m(5);E.s(7);E.o(-26);E.f("collab");E.gel(5);}],
-    ["Transférer le siège à Zurich — 6 Md","gel 5 ans · opinion +11",()=>{E.m(-6);E.gel(5);E.o(11);}]]},
+    ["Offrir les plans au régime pour survivre","+5 Md · soutien +7 · opinion −26",()=>{E.m(5);E.s(7);E.o(-26);E.f("collab");E.gel(5);
+      E.port("En 1939, il a mis les plans de l'Institut à la disposition du régime. Il a passé le reste de sa vie à expliquer pourquoi.");}],
+    ["Transférer le siège à Zurich — 6 Md","gel 5 ans · opinion +11 · santé −6",()=>{E.m(-6);E.gel(5);E.o(11);E.vie(-6);E.f("exil");
+      E.port("Il a passé la guerre à Zurich, apatride parmi les apatrides, à recalculer un barrage que personne ne construirait.");}]]},
 
 {id:"sorgel",t:"Herman Sörgel est mort",k:"Histoire",fy:1952,
- x:"Renversé ce matin par une voiture, à bicyclette, sur la route de son institut. Soixante-sept ans. Il n'aura jamais vu creuser une pelletée de son continent.",
- o:[["Poursuivre à la lettre du plan","soutien +7 · opinion −5",()=>{E.s(7);E.o(-5);E.f("orthodoxe");}],
-    ["Réviser le projet à la lumière des faits","opinion +14 · soutien −7",()=>{E.o(14);E.s(-7);E.f("reforme");}],
-    ["En faire un martyr de la technique — 4 Md","opinion +11 · soutien +7",()=>{E.m(-4);E.o(11);E.s(7);}]]},
+ x:"Renversé ce matin par une voiture, à bicyclette, sur la route de son institut. Soixante-sept ans. Il n'aura jamais vu creuser une pelletée de son continent. L'Institut vous revient : vous êtes entré chez lui à vingt-cinq ans, et vous en avez quarante-sept.",
+ o:[["Poursuivre à la lettre du plan","soutien +7 · opinion −5 · fidélité",()=>{E.s(7);E.o(-5);E.f("orthodoxe");E.tr("sorgel",20);
+      E.port("À la mort du maître, il a juré de ne rien changer. Il a tenu plus longtemps qu'on ne le croyait possible.");}],
+    ["Réviser le projet à la lumière des faits","opinion +14 · soutien −7 · indépendance",()=>{E.o(14);E.s(-7);E.f("reforme");E.tr("sorgel",-25);
+      E.port("Il a enterré Sörgel un mardi et révisé son plan le jeudi. On le lui a beaucoup reproché ; les chiffres lui donnaient raison.");}],
+    ["En faire un martyr de la technique — 4 Md","opinion +11 · soutien +7",()=>{E.m(-4);E.o(11);E.s(7);E.tr("sorgel",10);
+      E.port("C'est lui qui a fait de Sörgel un martyr de la technique, avec une statue et une souscription.");}]]},
 
 {id:"nuke",t:"Obninsk produit du courant",k:"Histoire",fy:1954,
  x:"Une centrale soviétique fabrique de l'électricité à partir d'uranium. Un de vos ingénieurs vous le dit sans détour : l'argument énergétique d'Atlantropa vient de mourir dans une salle de contrôle, à deux mille kilomètres d'ici.",
  o:[["Recentrer le projet sur les terres et la liaison Afrique","soutien −7 · opinion +7",()=>{E.s(-7);E.o(7);E.f("pivot");}],
     ["Contester le coût réel du nucléaire — 4 Md","soutien −5 · opinion −5",()=>{E.m(-4);E.s(-5);E.o(-5);}],
-    ["Ne rien changer au discours","soutien −18",()=>{E.s(-18);}]]},
+    ["Ne rien changer au discours","soutien −18",()=>{E.s(-18);E.tr("ideal",12);
+      E.port("En 1954, on lui a dit que l'atome avait tué son argument. Il a répondu qu'on verrait bien.");}]]},
 
 {id:"suezc",t:"Crise de Suez",k:"Histoire",fy:1956,
  x:"Nasser nationalise le canal. Français et Britanniques débarquent, puis reculent sous la pression américaine. Votre projet d'écluses se retrouve au milieu de la table.",
@@ -351,7 +358,8 @@ const DECISIONS=[
  x:"L'Algérie est indépendante. En cinq ans, dix-sept pays africains ont pris leur souveraineté. Le mot Eurafrique, qui figure au fronton de votre institut, est devenu une insulte diplomatique.",
  o:[["Refonder le consortium sur l'égalité des voix","Sud +22 · soutien −14 · opinion +13",()=>{E.aa(SUD,22);E.s(-14);E.o(13);E.f("refonde");}],
     ["Traiter avec chaque État séparément — 10 Md","Sud +12",()=>{E.m(-10);E.aa(SUD,12);}],
-    ["Maintenir la structure existante","Sud −28 · soutien −12",()=>{E.aa(SUD,-28);E.s(-12);E.f("deco");}]]},
+    ["Maintenir la structure existante","Sud −28 · soutien −12",()=>{E.aa(SUD,-28);E.s(-12);E.f("deco");E.tr("africa",-20);
+      E.port("En 1962, il a maintenu le mot Eurafrique au fronton. C'est la dernière chose qu'on ait retenue de lui au sud.");}]]},
 
 {id:"oil",t:"Embargo",k:"Histoire",fy:1973,
  x:"Le baril quadruple en trois mois. Pour la première fois depuis vingt ans, on vous rappelle publiquement qu'une turbine ne consomme rien et n'appartient à aucun cartel.",
@@ -399,6 +407,38 @@ const DECISIONS=[
  x:"Les manuels scolaires de six pays décrivent Atlantropa au chapitre « géographie de demain ». Une génération entière grandira en sachant dessiner la nouvelle côte de mémoire.",
  o:[["Fournir les cartes officielles — 2 Md","opinion +9",()=>{E.m(-2);E.o(9);}],
     ["Laisser faire","opinion +3",()=>{E.o(3);}]]},
+
+/* ============ LE PERSONNAGE ============
+   Trois dossiers qui n'existent que parce que le prologue a eu lieu : ils
+   lisent les traits et le plan, et rendent au joueur ce qu'il a posé en
+   1926-1930. Sans eux, le prologue serait un questionnaire d'ouverture. */
+
+{id:"exergue",t:"L'exergue",k:"Histoire",fy:1938,
+ x:"Sörgel place une citation de Hitler en exergue de son nouveau livre. Il vous l'explique posément, dans son bureau : c'est le prix pour qu'on continue de les recevoir au ministère. Vous êtes russe, apatride, et vous travaillez à Munich depuis huit ans.",
+ o:[["Le lui dire en face","fidélité −· opinion +10",()=>{E.tr("sorgel",-28);E.o(10);E.s(-8);
+      E.port("Il a dit à Sörgel en face ce qu'il pensait de l'exergue de 1938. Ils ne se sont plus tutoyés pendant quatre ans.");}],
+    ["Se taire : ce n'est pas son institut","fidélité +",()=>{E.tr("sorgel",18);E.o(-12);
+      E.port("Il n'a rien dit en 1938. Il en a parlé une fois, en 1961, à un journaliste qui n'a pas compris de quoi il s'agissait.");}],
+    ["Faire retirer l'exergue de l'édition française — 2 Md","opinion +14 · soutien −6",()=>{E.m(-2);E.o(14);E.s(-6);E.tr("sorgel",-10);
+      E.port("Il a payé de sa poche pour que l'édition française du livre paraisse sans l'exergue.");}]]},
+
+{id:"carnet",t:"Le carnet vert",k:"Histoire",y:[1936,1945],p:3,c:()=>!S.flags.carnet,
+ x:"La police de Munich réexamine les titres de séjour des étrangers de l'Institut. Un apatride de naissance russe, employé d'un organisme qui traite avec le ministère : votre dossier remonte, et il redescend avec une question écrite.",
+ o:[["Demander la protection de l'Institut","fidélité + · soutien −5",()=>{E.f("carnet");E.tr("sorgel",15);E.s(-5);
+      E.port("Il a dû demander à Sörgel d'écrire à la police de Munich pour lui. Il n'a jamais oublié d'avoir eu à le demander.");}],
+    ["Partir pour la Suisse, discrètement — 4 Md","santé −4 · opinion +6",()=>{E.m(-4);E.vie(-4);E.o(6);E.f("carnet");E.f("exil");
+      E.port("Il a franchi la frontière suisse avec un carnet vert et une serviette de calculs.");}],
+    ["Solliciter la nationalité allemande","soutien +10 · opinion −16",()=>{E.s(10);E.o(-16);E.f("carnet");E.f("allemand");E.tr("russia",-20);
+      E.port("Il a demandé un passeport allemand en pleine guerre. Il l'a obtenu, et il en a eu honte jusqu'à la fin.");}]]},
+
+{id:"retour",t:"L'invitation de Moscou",k:"Diplomatie",y:[1955,1972],p:3,c:()=>leans("russia","pos")&&!S.flags.retour,
+ x:"L'Académie des sciences d'URSS vous invite à visiter les grands ouvrages du Volga. La lettre est signée d'un ingénieur qui a votre âge et votre accent, et elle mentionne, comme en passant, que la maison de votre père est toujours debout.",
+ o:[["Y aller","URSS + · soutien −10 · opinion +6",()=>{E.s(-10);E.o(6);E.f("retour");E.f("volga");E.tr("russia",20);
+      E.port("Il est retourné en Russie une fois, en costume d'ingénieur étranger, et il a vu la maison de son père devenue une école.");}],
+    ["Envoyer une délégation sans lui","soutien −3",()=>{E.s(-3);E.f("retour");
+      E.port("Il a envoyé trois ingénieurs sur le Volga et n'a jamais lu leur rapport en entier.");}],
+    ["Refuser sèchement","soutien +6 · deuil",()=>{E.s(6);E.f("retour");E.tr("russia",-25);
+      E.port("Il a refusé l'invitation de Moscou en trois lignes. On a retrouvé le brouillon, qui en faisait quatre pages.");}]]},
 
 {id:"conf",t:"Conférence du consortium",k:"Diplomatie",y:[1930,2100],p:2,rep:18,
  x:"Les délégués se réunissent pour l'assemblée générale. L'ordre du jour est mince ; les couloirs ne le sont pas.",
