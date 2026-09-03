@@ -286,6 +286,18 @@ Fenêtre effective : ~1975-2000, comme posé au tour 2. Le journal glisse des
 signes (« vous toussez à nouveau », « le médecin insiste ») quand l'espérance
 descend sous certains paliers.
 
+### Tour 10 — la carte et l'outillage (03/09/2026)
+
+| Question | Décision | Conséquences |
+|---|---|---|
+| Pays | **Teinter les côtes.** Chaque pays colore son trait de côte selon sa posture, sur quelques centaines de kilomètres. | Zéro donnée nouvelle : les côtes sortent déjà du modèle de terrain, et `render/overlays.js` étant partagé, la teinte marche en 2D comme en relief sans code en double. Aucune frontière figée à 1930 à faire vieillir jusqu'en 1991. |
+| Conflits | **Ancrés sur l'ouvrage visé** : un barrage, un port, une terre émergée. Marqueur qui pulse, clic vers le dossier. | Les conflits du jeu portent tous sur l'ouvrage — le marqueur est donc toujours à un endroit qui existe déjà dans l'état (`S.built`, `S.active`, les villes). |
+| `sim-check` | **Il joue tout, au hasard**, prologue compris, jusqu'à la mort du héros, et balaye les nouvelles grandeurs. | La porte du modèle couvre `S.pressure`, `S.strain`, l'indice de divergence, l'espérance de vie, la dette. Les 8 parties × 210 ans deviennent 8 parties × ~65 ans : plus rapide, et enfin représentatives de ce qu'un joueur fait. |
+
+Toutes les questions de spécification sont closes. La suite est l'écriture,
+dans l'ordre convenu : **1 personnage → 2 financement → 4 course → 3 carte**,
+une phase par PR jouable.
+
 ## 2. Vue d'ensemble — ce que la spec ajoute au code
 
 Pour lire les six tours d'un coup. Chaque ligne est un module ou une donnée,
@@ -303,8 +315,10 @@ avec la phase qui la porte (ordre convenu : 1 → 2 → 4 → 3).
 
 ## 3. Questions ouvertes ⏳
 
-- Système d'incidents : les seuils des jauges (au premier `sim-check`).
-- Interactions sur la carte : pays (pas de polygones aujourd'hui), conflits
-  (produits par le moteur d'histoire alternative).
-- Adaptation de `sim-check` : il force Gibraltar et saute la négociation ; il
-  devra jouer le prologue ou démarrer en acte II.
+Aucune question de spécification n'est ouverte. Ce qui reste se tranche au
+contact du code, et non par écrit :
+
+- Les seuils des deux jauges (`S.pressure`, `S.strain`) et le barème de vie :
+  posés au chiffre proposé, réglés au premier `sim-check`.
+- Le texte des charnières et des neuf fins : écrit à la phase concernée,
+  relu par le joueur.
