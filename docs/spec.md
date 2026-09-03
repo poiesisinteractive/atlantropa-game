@@ -232,6 +232,15 @@ Deux grandeurs nouvelles dans `S`, de 0 à 100 :
 
 Les seuils ci-dessus sont des points de départ pour `sim-check`, pas des décisions.
 
+### Tour 8 — postures, chronologie, fins (03/09/2026)
+
+| Question | Décision | Conséquences |
+|---|---|---|
+| Suite | **Fermer toutes les questions ouvertes** avant la phase 1. | Un ou deux tours de plus : fins à la mort, coût de vie des cartes, chiffres des obligations, `sim-check`. |
+| Postures | **Seuils fixes avec hystérésis.** Allié > 65, neutre 35-65, hostile < 35, en guerre < 15 *et* une charnière de guerre ouverte. Un pays ne change de posture qu'après deux ans hors de sa bande. | Lisible, testable : `sim-check` vérifie qu'aucune posture ne clignote. `nat[].posture` et `nat[].since` s'ajoutent à l'état. |
+| Chronologie | **Frise à deux lignes.** En haut l'Histoire réelle, dates fixes, barrées quand déviées ; en bas la vôtre : charnières, incidents, ruptures, mort du héros. Indice de divergence en tête ; un clic rouvre le dossier. | Nouvel onglet. La ligne du haut est une donnée statique (`data/history.js`), la ligne du bas se construit depuis le journal. |
+| Fins à la mort | **Par ce qu'il laisse** : le nom est l'état du monde à sa mort. | Six à huit fins, une par combinaison de niveau, course et posture. Liste à arrêter au tour 9. |
+
 ## 2. Vue d'ensemble — ce que la spec ajoute au code
 
 Pour lire les six tours d'un coup. Chaque ligne est un module ou une donnée,
@@ -254,8 +263,8 @@ avec la phase qui la porte (ordre convenu : 1 → 2 → 4 → 3).
 - Acte I : chiffres des obligations. (La première pierre est devenue une
   question du moteur d'histoire alternative.)
 - Système d'incidents : les seuils des jauges (au premier `sim-check`).
-- Moteur d'histoire alternative : les postures (seuils d'attitude), le texte
-  des charnières, la fin *l'ouvrage confisqué*.
+- Moteur d'histoire alternative : le texte des charnières, la fin *l'ouvrage
+  confisqué*.
 - Interactions sur la carte : pays (pas de polygones aujourd'hui), conflits
   (produits par le moteur d'histoire alternative).
 - Adaptation de `sim-check` : il force Gibraltar et saute la négociation ; il
