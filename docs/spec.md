@@ -210,14 +210,50 @@ charnière à trois issues.
 si un Tchernobyl aggravé peut gagner la course à lui seul, et si la rupture
 est une fin ou un dégât.
 
-## 2. Questions ouvertes ⏳
+### Tour 7 — les incidents (03/09/2026)
+
+| Question | Décision | Conséquences |
+|---|---|---|
+| Jauge atome | **Les quatre** : l'écart de la course, la propagande, le refus de la main tendue, l'embargo technologique. | Tout ce que Morev fait *contre* Moscou monte la jauge. Elle ne baisse que par la coopération : la main tendue acceptée, une clause en échange. L'embargo se retourne : le renseignement soviétique passe côté eau. |
+| Jauge eau | **Les quatre** : la hâte, l'entretien sous-financé, la guerre et le sabotage, les séismes — **plus l'Etna**, très actif, qui peut semer la zizanie. | L'Etna s'ajoute au socle sismique existant (`messina`, `sismRisk`, `quake`). Il touche la digue Sicile–Tunisie et Messine : éruptions, coulées, séismes flanc est. Ce n'est pas un choix du joueur : c'est le monde. Mais choisir Sicile–Tunisie d'abord (clause italienne) *choisit* l'Etna. |
+| Tchernobyl aggravé | **Il fait basculer, à un prix.** L'atome est discrédité, les GW soviétiques chutent, l'Europe demande l'eau ; mais le vent souffle vers l'ouest. | Retombées sur les terres émergées, opinion, réfugiés. La victoire dans la course arrive salie, et les fins demandent au joueur s'il l'a voulue. |
+| Rupture | **Une fin à la grande échelle seulement.** Gibraltar rompu = `reflood` réécrite en catastrophe humaine. Les autres ouvrages = dégâts lourds, années perdues, pays en colère. | L'échelle décide. Une seule fin par rupture, la plus grande ; le reste est du temps et de la réputation perdus. |
+
+#### Les jauges — chiffres à poser
+
+Deux grandeurs nouvelles dans `S`, de 0 à 100 :
+
+| | `S.pressure` (atome) | `S.strain` (eau) |
+|---|---|---|
+| Monte de | écart de course × k · propagande · main tendue refusée · embargo | hâte × k · entretien manquant · dégâts de guerre · sabotage · séismes · Etna |
+| Baisse de | main tendue acceptée, coopération technique | budget d'entretien, dossiers de sûreté (`caissons`, `corrosion`, `sismique`) |
+| Produit | incidents gradués (Kychtym 1957, Leningrad 1975, Beloïarsk 1978 sont les dates réelles ; le jeu peut les avancer ou les aggraver) ; en 1986, Tchernobyl à trois issues : historique < 40, aggravée 40-70, *l'Europe contaminée* > 70 | incidents gradués (fuite, vanne, affouillement) ; au-delà d'un seuil, tirage annuel d'une rupture : petit ouvrage = dégâts, Gibraltar = `reflood` |
+| Où on le voit | l'onglet Course et la chronologie | l'onglet Chantier et la chronologie |
+
+Les seuils ci-dessus sont des points de départ pour `sim-check`, pas des décisions.
+
+## 2. Vue d'ensemble — ce que la spec ajoute au code
+
+Pour lire les six tours d'un coup. Chaque ligne est un module ou une donnée,
+avec la phase qui la porte (ordre convenu : 1 → 2 → 4 → 3).
+
+| Phase | Ce qui s'ajoute | Où |
+|---|---|---|
+| 1 Personnage | Le prologue (1926-1930), les 8-12 cartes, les quatre traits, le portrait en phrases, la mort influencée et ses fins nommées | `content/prologue.js`, `S.traits`, `S.plan`, `content/endings.js` |
+| 2 Financement | Le registre des bailleurs (10), les clauses au grand livre et leurs échéances en dossiers, les obligations (émissions, taux, défaut) | `content/backers.js`, `S.ledger`, `S.bonds`, onglet Registre |
+| 4 Course | Les GW soviétiques, les quatre leviers (propagande, renseignement, main tendue, pari nucléaire), `S.pressure`, les incidents atome, Tchernobyl à trois issues | `core/race.js`, `content/race.js`, onglet Course |
+| 4 aussi | `S.strain` et les incidents eau, l'Etna, la rupture ; ils existent dès que le chantier existe mais leur sens vient de la course | `core/risk.js`, `content/incidents.js` |
+| transversal | Le moteur d'histoire alternative : postures depuis `nat[].att`, charnières à plusieurs issues (les six `fy:` réécrites + 1986), l'indice de divergence, la fin *l'ouvrage confisqué* | `core/history.js`, `content/hinges.js`, onglet Chronologie |
+| 3 Carte | Villes, pays, conflits, chantiers cliquables ; postures et conflits dessinés | `render/overlays.js` (existe), `render/interact.js`, polygones de pays (donnée nouvelle) |
+| outillage | `sim-check` joue le prologue ou démarre en acte II ; balaye `S.pressure`, `S.strain`, l'indice de divergence | `tools/sim-check.mjs` |
+
+## 3. Questions ouvertes ⏳
 
 - Les fins à la mort : noms, textes, seuils.
 - Chiffrage du coût de vie des cartes.
 - Acte I : chiffres des obligations. (La première pierre est devenue une
   question du moteur d'histoire alternative.)
-- Système d'incidents : jauges, échelle, portée de Tchernobyl, la rupture
-  (tour 7).
+- Système d'incidents : les seuils des jauges (au premier `sim-check`).
 - Moteur d'histoire alternative : les postures (seuils d'attitude), le texte
   des charnières, la fin *l'ouvrage confisqué*.
 - Interactions sur la carte : pays (pas de polygones aujourd'hui), conflits
