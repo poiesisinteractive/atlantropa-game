@@ -58,11 +58,26 @@ c'est **le curseur des vannes avec un visage et une horloge**. Et Tchernobyl
 en 1986 est le pendant du sel : les deux promesses d'énergie infinie ont un
 grand livre caché.
 
+### Tour 2 — le personnage (31/08/2026)
+
+| Question | Décision | Conséquences |
+|---|---|---|
+| Formation | **Paris, l'École des Ponts.** (Contre ma recommandation, Berlin.) | Il lit Sörgel en traduction et par la presse, dont *L'Illustration*. Le fil français et africain domine : la France tient l'Algérie et le Maroc, donc la rive sud du barrage. Sa venue à Munich en 1930 est un *départ*, un choix de carte à part entière. |
+| Institut | **Disciple dans l'Institut**, à Munich dès 1930. | Le joueur agit de l'intérieur, en désaccord croissant avec le maître (Hitler en exergue, 1938). L'héritage de 1952 est naturel. Le jeu actuel change le moins. |
+| Prologue | **8 à 12 cartes, 1926-1930**, au rythme du reste. | Un acte court, rejouable, cinq minutes. Chaque carte pose un trait ou un choix de conception et laisse une trace au journal. La dernière carte est le départ pour Munich. |
+| Mort | **Influencée par le jeu.** Espérance de base vers 1990, déplacée par surmenage, chantiers, exil, ennemis. Fenêtre ~1975-2000. | Un enjeu, pas une jauge affichée. Les cartes portent un coût de vie discret (⏳ à chiffrer). |
+
+Arc du personnage, tel qu'il se dessine : né vers 1904-1906 dans une famille
+russe, évacué en 1920 (Crimée, Wrangel), passeport Nansen en 1922, Paris, les
+Ponts, lit Sörgel en 1929, part pour Munich en 1930. Français de formation,
+allemand d'école, russe de deuil, apatride de papiers.
+
 ## 2. Questions ouvertes ⏳
 
-- Formation et ville du héros ; sa position vis-à-vis de l'Institut 1930-1952.
-- Forme et longueur du prologue ; visibilité des traits.
-- Mécanique de la mort ; définition de « le projet vous survit ».
+- Les axes de traits et leur visibilité.
+- Ce que « orienter le projet » veut dire au prologue : quelles dimensions de conception.
+- Définition de « le projet vous survit » (fins à la mort du héros).
+- Chiffrage du coût de vie des cartes.
 - Modèle de financement (recommandation en attente : registre de bailleurs à
   clauses et échéances).
 - Interactions sur la carte : villes (coordonnées existantes), pays (pas de
