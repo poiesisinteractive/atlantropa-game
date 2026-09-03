@@ -3,13 +3,15 @@
 #
 # Doctrine : poiesis-skills/skills/poiesis-deploy/DEPLOY.md §13.
 #
-# Ce workflow s'arrête volontairement avant le job `deploy`, et ce n'est pas un
-# oubli : §13.9-1 dit qu'« un CI n'est pas un chemin de première mise en ligne ».
-# Atlantropa n'est pas déployé — pas de sous-domaine, pas de bloc Caddy, pas de
-# profil privé. Le jour où il le sera (§3 à §8, recette = 401 sans identifiants),
-# le job `deploy` de templates/ci/ci-static.yml se greffe ici derrière
-# `needs: [build, model, interface, relief]`, avec sa forced command et ses
-# secrets. Les gardes du bundle ci-dessous sont déjà en place pour ça.
+# Ce workflow s'arrête volontairement avant le job `deploy`. Atlantropa est en
+# ligne depuis le 31/08/2026 (proto.atlantropa-game.poiesis-interactive.com,
+# profil privé), mis en ligne à la main comme le veut §13.9-1 — « un CI n'est
+# pas un chemin de première mise en ligne ». Les redéploiements passent par
+# deploy.ps1. Le jour où on voudra les automatiser, c'est §13.9 étapes 2 à 9 :
+# clé SSH dédiée bridée par forced command, ci-deploy.sh installé sous
+# /usr/local/bin, puis le job `deploy` de templates/ci/ci-static.yml greffé ici
+# derrière `needs: [build, model, interface, relief]`. Les gardes du bundle
+# ci-dessous sont déjà en place pour ça.
 #
 # Pas de job `typecheck` non plus, et pour une raison mesurée plutôt que par
 # paresse : le projet est en JavaScript nu. `tsc --checkJs` y sort 32 erreurs de

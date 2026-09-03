@@ -1,0 +1,4 @@
+# Les scripts PowerShell tournent sur le poste Windows : on les épingle en CRLF
+# pour qu'un aller-retour par une machine Unix ne les réécrive pas silencieusement
+# — ce qui rendrait illisible le diff contre le template canonique de poiesis-deploy.
+*.ps1 text eol=crlf
