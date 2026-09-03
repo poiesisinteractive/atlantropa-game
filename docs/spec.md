@@ -176,15 +176,50 @@ dévier :
 charnières retenues, où le joueur voit la divergence, et si le monde peut se
 retourner *contre* le projet.
 
+### Tour 6 — le moteur d'histoire alternative (03/09/2026)
+
+| Question | Décision | Conséquences |
+|---|---|---|
+| Nature | **Hybride.** Des postures de pays calculées à partir des attitudes existantes, qui déclenchent des charnières écrites à la main. | Le calcul décide, le texte raconte. `nat[].att` devient la source d'une posture (allié / neutre / hostile / en guerre) ; les six dossiers `fy:` deviennent des charnières à plusieurs issues. |
+| Charnières | **Les quatre** (1940-45, 1954-62, 1973, 1975-91) **plus Tchernobyl 1986**, dans une version où la catastrophe est bien plus mortelle et change la donne face à l'énergie de l'eau. Et, en amont : **des incidents nucléaires avant 1986 selon la pression mise sur l'URSS** dans la partie ; **de même pour les barrages**, dont les incidents peuvent mener au désastre. | Un **système d'incidents** naît ici — symétrique : l'atome et l'eau portent chacun leur risque de catastrophe. C'est probablement le cinquième levier de la course resté sans nom au tour 5. Proposition ci-dessous. |
+| Affichage | **Les quatre** : chronologie, brèves, carte, fins. | La chronologie est l'onglet du moteur ; les brèves son bruit de fond ; la carte (phase 3) ses postures et conflits ; les fins son bilan. |
+| Menace | **Oui, jusqu'à la perte.** Un barrage peut être bombardé, occupé, saisi. | Une fin nouvelle, *l'ouvrage confisqué*, et des dégâts qui coûtent des années. Le prix à payer de la phase 2 prend un corps. |
+
+#### Le système d'incidents — proposition
+
+Deux jauges de risque, une par camp, alimentées par ce que le joueur fait :
+
+| | Jauge | Ce qui la monte | Ce qui la baisse | Ce qu'elle produit |
+|---|---|---|---|---|
+| **L'atome** | pression sur l'URSS | l'écart de la course (les GW que Moscou doit rattraper), la propagande, les révélations sur la sûreté soviétique | la main tendue acceptée, une coopération technique | des incidents à Kychtym, Leningrad, Beloïarsk… avant 1986 ; puis **Tchernobyl** dont la gravité est celle de la jauge : historique, aggravée, ou *l'Europe contaminée* |
+| **L'eau** | risque d'ouvrage | la hâte (cadence de chantier), l'entretien sous-financé, les séismes existants (`S.quakes`), les dégâts de guerre, le sabotage (le *renseignement* de Moscou) | les dossiers de sûreté existants (`caissons`, `undertow`, `corrosion`, `breach`), un budget d'entretien | des incidents de barrage (fuite, vanne, affouillement) puis **la rupture** — l'équivalent de Tchernobyl côté eau |
+
+La symétrie est le sens : ce que Morev fait subir à l'atome, l'eau peut le
+subir aussi. Un Tchernobyl aggravé discrédite l'atome et fait de l'eau
+l'énergie de l'Europe — mais le vent souffle vers l'ouest, et les terres
+émergées reçoivent les retombées. Une rupture de barrage est la réinondation
+zancléenne, en une nuit et sur des gens : l'issue `reflood` existe, elle
+change de cause.
+
+Ce qui existe déjà et sert de socle : `quake` (2 %/an sous −70 m), `breach`
+(brèche volontaire), `reflood` (fin), `S.quakes`, les dossiers techniques.
+Ce qui manque : les deux jauges, les incidents gradués, et Tchernobyl comme
+charnière à trois issues.
+
+⏳ Ouvert : ce qui alimente chaque jauge au juste, l'échelle des incidents,
+si un Tchernobyl aggravé peut gagner la course à lui seul, et si la rupture
+est une fin ou un dégât.
+
 ## 2. Questions ouvertes ⏳
 
 - Les fins à la mort : noms, textes, seuils.
 - Chiffrage du coût de vie des cartes.
 - Acte I : chiffres des obligations. (La première pierre est devenue une
   question du moteur d'histoire alternative.)
-- Moteur d'histoire alternative : nature, charnières, affichage, retournement
-  du monde contre le projet (tour 6).
-- La course : le cinquième levier, « autre chose », non nommé.
+- Système d'incidents : jauges, échelle, portée de Tchernobyl, la rupture
+  (tour 7).
+- Moteur d'histoire alternative : les postures (seuils d'attitude), le texte
+  des charnières, la fin *l'ouvrage confisqué*.
 - Interactions sur la carte : pays (pas de polygones aujourd'hui), conflits
   (produits par le moteur d'histoire alternative).
 - Adaptation de `sim-check` : il force Gibraltar et saute la négociation ; il
