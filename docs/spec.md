@@ -72,11 +72,19 @@ russe, évacué en 1920 (Crimée, Wrangel), passeport Nansen en 1922, Paris, les
 Ponts, lit Sörgel en 1929, part pour Munich en 1930. Français de formation,
 allemand d'école, russe de deuil, apatride de papiers.
 
+### Tour 3 — traits, conception, victoire (31/08/2026)
+
+| Question | Décision | Conséquences |
+|---|---|---|
+| Axes de traits | **Les quatre** : idéaliste ↔ pragmatique · Afrique terre vide ↔ partenaire · loyauté ↔ indépendance envers Sörgel · Russie deuil ↔ revanche. | Quatre scalaires dans `S.traits`, posés au prologue, déplacés par les dossiers, lus par l'éligibilité (`c:`) et par des variantes de texte. |
+| Visibilité | **Portrait en phrases.** Un onglet qui se remplit de phrases au fil des choix. Pas de barre, pas de chiffre. | Chaque carte qui touche un trait fournit sa phrase de portrait. Le joueur se lit, il ne se mesure pas. |
+| Dimensions de conception | **Les quatre** : l'ouvrage-cœur · la cible d'abaissement · le bénéfice mis en avant · la place de l'Afrique dans le plan. | Un objet `S.plan` posé au prologue. Les clauses des bailleurs (acte I) peuvent le **trahir** : c'est là que naissent les fils narratifs. La cible d'abaissement change la physique et le seuil d'irréversibilité. |
+| « Le projet vous survit » | **Des fins nommées à la mort**, comme aujourd'hui. L'état du monde décide : irréversibilité atteinte, institution assurée, ou projet mort avec lui. Le tableau « promis / obtenu » reste le verdict. | Les fins `siecle` et `victory` (−155 m) disparaissent ; `faillite`, `abandon`, `revolte`, `reflood` restent. Nouvelles fins : *irréversible*, *assuré*, *enterré avec lui* (⏳ à nommer et à écrire). La note interne du point de non-retour (−55 m) existe déjà. |
+
 ## 2. Questions ouvertes ⏳
 
-- Les axes de traits et leur visibilité.
-- Ce que « orienter le projet » veut dire au prologue : quelles dimensions de conception.
-- Définition de « le projet vous survit » (fins à la mort du héros).
+- Le nom du héros.
+- Les fins à la mort : noms, textes, seuils.
 - Chiffrage du coût de vie des cartes.
 - Modèle de financement (recommandation en attente : registre de bailleurs à
   clauses et échéances).
