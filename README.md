@@ -122,10 +122,42 @@ existante, à −12 Md.
 Le tout se lit dans l'onglet **Registre** : la trésorerie, le grand livre, les
 émissions, et les six boutons qui permettent d'emprunter.
 
+## La course — l'atome contre l'eau
+
+Obninsk produit du courant en juin 1954 et tue l'argument de Sörgel dans une
+salle de contrôle, à deux mille kilomètres du détroit. À partir de là, le jeu a
+un adversaire chiffré : les gigawatts nucléaires soviétiques, sur leur courbe
+réelle — 0,005 GW en 1954, 1 en 1970, 5 en 1975, 12 en 1980, 27 en 1985,
+Tchernobyl en 1986, 34 en 1990. Un onglet **Course** apparaît alors, et pas
+avant.
+
+**Deux jauges, symétriques.** `pressure` mesure ce que Morev fait subir à
+l'atome — son avance, la propagande, l'embargo, la main tendue refusée. Une
+URSS pressée construit plus vite *et moins bien* : elle rattrape jusqu'à
+cinquante pour cent plus vite, et Tchernobyl, en 1986, sera à la mesure de ce
+chiffre — historique en dessous de 40, deux tranches entre 40 et 70, trois
+tranches et l'Europe contaminée au-delà. `strain` mesure ce que l'ouvrage
+subit : la hâte, l'entretien sabré, le suréquipement, les séismes, l'Etna. Au
+delà de soixante-quinze, un tirage annuel : un petit barrage coûte des années,
+Gibraltar coûte la partie.
+
+Ce que Morev fait subir à l'atome, l'eau peut le subir aussi. C'est le sens du
+système, et la raison pour laquelle les deux jauges se ressemblent.
+
+**Gagner la course, c'est renoncer au continent.** La puissance vaut *débit ×
+hauteur de chute* : pour produire il faut ouvrir les vannes, et la mer cesse
+alors de descendre. Mesuré (`tools/sim-check.mjs` et le journal de la
+spécification) : vannes closes toute la vie, on finit à −48 m et 0 GW — on n'a
+pas couru. Vannes ouvertes dès 1970 sans rien équiper, 19,9 GW contre 31,9 : on
+perd. Il faut tenir les vannes fermées jusque vers 1978, avoir équipé la
+seconde usine et la dorsale, et alors 32 à 39 GW passent devant l'Union
+soviétique. Et l'on peut toujours gagner en commandant des réacteurs — mais
+c'est gagner en changeant de camp, et la fin le dit.
+
 ## Événements
 
 Le temps est celui d'une vie — soixante ans, jusqu'à 29 secondes par année. Le rythme vient
-des décisions, pas de l'horloge : **89 dossiers** à trancher, qui mettent le jeu en pause.
+des décisions, pas de l'horloge : **107 dossiers** à trancher, qui mettent le jeu en pause.
 
 Diplomatie (Montreux 1936, Bandung 1955, la clause impériale de Mussolini), ingénierie
 (caissons retournés, corrosion saline, les ossements de Gallipoli sous le chantier des
@@ -145,11 +177,12 @@ S'y ajoutent 30 brèves d'ambiance et un bilan décennal.
 
 ### Les fins
 
-Trois **arrêts** cassent la partie avant terme : faillite, dissolution du consortium,
+Quatre **arrêts** cassent la partie avant terme : faillite, dissolution du consortium,
 révolte. Les autres sont des **bilans** : Morev meurt, et l'on regarde ce qu'il laisse —
 *La mer basse*, *Une plaine de sel*, *Le lac des autres*, *Enterré avec lui*, plus quatre
 que les phases suivantes ouvriront (*L'ouvrage confisqué*, *Le courant de l'Europe*,
-*L'atome a gagné*, *Le passeport*).
+*L'atome a gagné*, *Le passeport*), et *La nuit zancléenne* quand le barrage
+cède de lui-même.
 
 Leurs seuils sortent de la physique et non d'un souhait. Le meilleur cas possible —
 Gibraltar fermé en 1935, vannes closes, argent illimité, tous les ouvrages lancés —
@@ -327,14 +360,16 @@ src/core/           le modèle : grille, relief, tour de simulation — sans DOM
   state.js          l'état de partie (S) et les options d'affichage (opts)
   character.js      traits, plan, espérance de vie — le personnage, sans jauge
   ledger.js         le grand livre : clauses signées et obligations émises
+  race.js           la courbe soviétique, les deux jauges, la rupture
   endgame.js        les fins : arrête l'horloge et annonce son verdict
   bus.js            ce que le modèle annonce à qui veut l'entendre
   journal.js        écrire une ligne de journal (S.log est de l'état, pas de l'écran)
   clock.js          vitesses du temps et changement de vitesse
 src/data/           contenu figé : nations, projets, villes, frontières, dem.bin
-src/content/        les 89 dossiers, 30 brèves, événements conditionnels, fins
+src/content/        les 107 dossiers, 30 brèves, événements conditionnels, fins
   prologue.js       les onze cartes de 1926-1930, et leur moteur
   backers.js        les dix bailleurs : offres, clauses, échéances
+  race.js           la course : leviers, incidents, Tchernobyl à trois issues
 src/render/         le rendu Canvas 2D — le fond raster, reconstruit pixel à pixel
   overlays.js       les surcouches vectorielles, partagées par les deux rendus
 src/render3d/       le rendu three.js — terrain, nappes par bassin, échelle verticale

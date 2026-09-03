@@ -1,6 +1,7 @@
 import { S, nat } from '../core/state.js';
 import { leans } from '../core/character.js';
 import { BACKERS } from './backers.js';
+import { RACE } from './race.js';
 import { dirty } from '../core/dirty.js';
 import { applyRates } from '../core/sim.js';
 import { E, SUD, RIV } from './effects.js';
@@ -342,7 +343,9 @@ const DECISIONS=[
     ["En faire un martyr de la technique — 4 Md","opinion +11 · soutien +7",()=>{E.m(-4);E.o(11);E.s(7);E.tr("sorgel",10);
       E.port("C'est lui qui a fait de Sörgel un martyr de la technique, avec une statue et une souscription.");}]]},
 
-{id:"nuke",t:"Obninsk produit du courant",k:"Histoire",fy:1954,
+/* C'est ce dossier qui ouvre la course : `S.flags.course` conditionne tout
+   `content/race.js` et l'onglet qui va avec. */
+{id:"nuke",t:"Obninsk produit du courant",k:"Histoire",fy:1954,fx:()=>{S.flags.course=true;},
  x:"Une centrale soviétique fabrique de l'électricité à partir d'uranium. Un de vos ingénieurs vous le dit sans détour : l'argument énergétique d'Atlantropa vient de mourir dans une salle de contrôle, à deux mille kilomètres d'ici.",
  o:[["Recentrer le projet sur les terres et la liaison Afrique","soutien −7 · opinion +7",()=>{E.s(-7);E.o(7);E.f("pivot");}],
     ["Contester le coût réel du nucléaire — 4 Md","soutien −5 · opinion −5",()=>{E.m(-4);E.s(-5);E.o(-5);}],
@@ -457,5 +460,5 @@ const DECISIONS=[
    fenêtre, échéances à date fixe. Les concaténer plutôt que les traiter à
    part, c'est ce qui leur donne gratuitement la pause du temps, le tirage
    pondéré, le journal et la modale. */
-DECISIONS.push(...BACKERS);
+DECISIONS.push(...BACKERS, ...RACE);
 export { DECISIONS };

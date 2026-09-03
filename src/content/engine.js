@@ -44,6 +44,10 @@ function tryDecision(){
    le moteur. */
 function fire(e){
   S.fired[e.id]=S.year; dec.cur=e; S.decisions++;
+  // `fx` : ce qu'un dossier change du seul fait de s'ouvrir, avant tout choix.
+  // Obninsk s'en sert pour ouvrir la course : la nouvelle est tombée, quoi
+  // que le joueur réponde.
+  if(e.fx) e.fx();
   speedBefore=S.speed||1; setSpeed(0);
   emit('decision', { ev:e });
 }

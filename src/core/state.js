@@ -35,7 +35,14 @@ const S={
      `backers` : le bailleur signé et l'année. `ledger` : les clauses, avec
      leur statut — une clause dénoncée reste inscrite, c'est un grand livre
      et non un brouillon. `bonds` : les émissions vives et éteintes. */
-  backers:{}, ledger:[], bonds:[]
+  backers:{}, ledger:[], bonds:[],
+
+  /* --------------------------------------------------------- LA COURSE
+     `pressure` : ce que Morev fait subir à l'atome soviétique. `strain` :
+     ce que l'ouvrage subit. Les deux vont de 0 à 100 et sont symétriques —
+     c'est le sens du système. `atomGW` : les réacteurs que l'Institut aura
+     fini par commander, s'il en commande. */
+  pressure:0, strain:0, atomGW:0, sovietGW:0
 };
 PROJECTS.forEach(p=>{S.prog[p.id]=0;S.built[p.id]=false;S.active[p.id]=false;});
 const nat={}; NATIONS.forEach(n=>nat[n.id]={...n});
